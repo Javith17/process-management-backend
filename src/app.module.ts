@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
+import { CustomerEntity } from './model/customer.entity';
 import { ProcessEntity } from './model/process.entity';
 import { RoleEntity } from './model/role.entity';
 import { SupplierEntity } from './model/supplier.entity';
@@ -19,9 +20,10 @@ import { UserModule } from './user/user.module';
       port: 5432,
       username: 'postgres',
       password: 'root',
-      database: 'process_mgnt',
-      entities: [ UserEntity, RoleEntity, ProcessEntity, VendorEntity, VendorProcessEntity, SupplierEntity ],
-      synchronize: false,
+      database: 'process_mgnt_1',
+      entities: [ UserEntity, RoleEntity, ProcessEntity, VendorEntity, VendorProcessEntity, 
+        SupplierEntity, CustomerEntity ],
+      synchronize: true,
     }),
     ConfigModule.forRoot({
       isGlobal:true

@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS "vendorprocess" (
 	"processName"  character varying NOT NULL,
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT "fk_vendor" FOREIGN KEY("vendorId") REFERENCES vendors(id)
 );
 
 CREATE TABLE IF NOT EXISTS "suppliers" (
@@ -70,9 +71,9 @@ CREATE TABLE IF NOT EXISTS "suppliers" (
 );
 
 INSERT INTO public.roles(
-	id, "roleName", "roleCode", is_active, screens)
+	id, "role_name", "role_code", is_active, screens)
 	VALUES ('9cf85834-0841-4c25-adf8-b4d2e077ec4b', 'Super Admin', 'R001', 'true', '[]');
 
 INSERT INTO public.users(
-	id, "empName", "empCode", password)
-	VALUES ('64f62c4e-0766-49f6-9a6b-e3a8bc6a1562', 'admin', 'admin', 'admin');
+	id, "emp_name", "emp_code", password,role_id)
+	VALUES ('64f62c4e-0766-49f6-9a6b-e3a8bc6a1562', 'admin', 'admin', 'admin', '9cf85834-0841-4c25-adf8-b4d2e077ec4b');

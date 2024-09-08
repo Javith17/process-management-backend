@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateUserPassword } from 'src/dto/admin.dto';
+import { Pagination } from 'src/dto/pagination.dto';
 import { AdminService } from './admin.service';
 
 @UseGuards(AuthGuard)
@@ -62,8 +63,8 @@ export class AdminController {
     }
 
     @Get('/vendorsList')
-    getVendors(){
-        return this.adminService.getVendorsList()
+    getVendors(@Query() pagination: Pagination){
+        return this.adminService.getVendorsList(pagination)
     }
 
     @Post('/createSupplier')
@@ -72,7 +73,17 @@ export class AdminController {
     }
 
     @Get('/suppliersList')
-    getSuppliers(){
-        return this.adminService.getSuppliers()
+    getSuppliers(@Query() pagination: Pagination){
+        return this.adminService.getSuppliers(pagination)
+    }
+
+    @Post('/createCustomer')
+    createCustomer(@Body() createCustomer: CreateCustomer){
+        return this.adminService.createNewCustomer(createCustomer)
+    }
+
+    @Get('/customersList')
+    getCustomers(@Query() pagination: Pagination){
+        return this.adminService.getCustomers(pagination)
     }
 }

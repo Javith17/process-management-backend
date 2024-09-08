@@ -1,17 +1,18 @@
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 import { UUID } from "crypto";
 
 export class CreateRole{
     @IsString()
     @IsNotEmpty()
-    roleName:string;
+    role_name:string;
 
     @IsString()
-    roleCode:string;
+    role_code:string;
 
     @IsArray()
-    screens: string[];
+    screens: [];
 }
+
 
 export class CreateUser{
     @IsString()
@@ -42,75 +43,103 @@ export class UpdateUserPassword{
 export class CreateProcess{
     @IsString()
     @IsNotEmpty()
-    processName:string;
+    process_name:string;
 }
 
 export class CreateVendor{
     @IsString()
     @IsNotEmpty()
-    vendorName:string;
+    vendor_name:string;
 
     @IsString()
-    vendorCode:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendorAddress:string;
-
-    @IsString()
-    vendorGST:string;
+    vendor_code:string;
 
     @IsString()
     @IsNotEmpty()
-    vendorAccountNo:string;
+    vendor_address:string;
 
     @IsString()
-    vendorLocation:string;
+    vendor_gst:string;
 
     @IsString()
     @IsNotEmpty()
-    vendorMobileNo1:string;
+    vendor_account_no:string;
+
+    @IsString()
+    vendor_location:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_mobile_no1:string;
 
     @IsString()
     @IsOptional()
-    vendorMobileNo2:string;
+    vendor_mobile_no2:string;
 
     @IsArray()
-    vendorProcessList: CreateVendorProcess[]
+    vendor_process_list: CreateVendorProcess[]
 }
 
 export class CreateVendorProcess{
     @IsString()
-    processId: string;
+    process_id: string;
 
     @IsString()
-    processName: string;
+    process_name: string;
 }
 
 export class CreateSupplier{
     @IsString()
     @IsNotEmpty()
-    supplierName:string;
+    supplier_name:string;
 
     @IsString()
-    supplierCode:string;
-
-    @IsString()
-    @IsNotEmpty()
-    supplierAddress:string;
+    supplier_code:string;
 
     @IsString()
     @IsNotEmpty()
-    supplierAccountNo:string;
-
-    @IsString()
-    supplierLocation:string;
+    supplier_address:string;
 
     @IsString()
     @IsNotEmpty()
-    supplierMobileNo1:string;
+    supplier_account_no:string;
+
+    @IsString()
+    supplier_location:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_mobile_no1:string;
 
     @IsString()
     @IsOptional()
-    supplierMobileNo2:string;
+    supplier_mobile_no2:string;
+}
+
+export class CreateCustomer{
+    @IsString()
+    @IsNotEmpty()
+    customer_name:string;
+
+    @IsString()
+    @IsNotEmpty()
+    customer_address:string;
+
+    @IsString()
+    customer_account_detail:string;
+
+    @IsString()
+    customer_mobile_no1:string;
+
+    @IsString()
+    customer_mobile_no2:string;
+
+    @IsBoolean()
+    is_machine:boolean;
+
+    @IsBoolean()
+    is_sares:boolean;
+
+    @IsBoolean()
+    is_spm:boolean;
 }

@@ -4,11 +4,16 @@ import { BaseEntity } from "./base.entity";
 @Entity('roles')
 export abstract class RoleEntity extends BaseEntity{
     @Column({ unique: true })
-    roleName:string;
+    role_name:string;
 
     @Column({ nullable:true })
-    roleCode:string;
+    role_code:string;
 
-    @Column('text',{ nullable: true, array: true })
-    screens: string[];
+    @Column({
+        name: 'screens',
+        type: 'jsonb',
+        default: () => "'[]'",
+        nullable: true,
+      })
+    screens: [];
 }

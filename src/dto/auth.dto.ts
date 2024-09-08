@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from "class-validator";
 export class SignIn{
     @IsString()
     @IsNotEmpty()
-    empCode:string;
+    emp_code:string;
 
     @IsString()
     @IsNotEmpty()

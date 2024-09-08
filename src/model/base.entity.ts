@@ -1,19 +1,20 @@
 import { UUID } from "crypto";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 export abstract class BaseEntity{
-    @PrimaryGeneratedColumn('increment')
+    @PrimaryGeneratedColumn('uuid')
+    @Index()
     id: UUID;
 
     @Column({ type:'boolean', default:true })
-    isActive: boolean;
+    is_active: boolean;
     
     // @Column({nullable:true})
     // createdBy: string;
 
     @CreateDateColumn({ type: "timestamptz", default: () => 'CURRENT_TIMESTAMP'   })
-    createdAt: Date;
+    created_at: Date;
 
     @UpdateDateColumn({ type: "timestamptz", default: () => 'CURRENT_TIMESTAMP'   })
-    updatedAt: Date;
+    updated_at: Date;
 }
