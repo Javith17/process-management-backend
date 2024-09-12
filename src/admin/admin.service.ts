@@ -30,8 +30,26 @@ export class AdminService {
         return newRole
     }
 
-    async getAllRoles(){
-        return { roles: await this.roleRepository.find({ select:['id','role_name', 'role_code', 'screens'], where: {is_active: true} }) }
+    async getAllRoles(pagination: Pagination){
+        let query = this.roleRepository.createQueryBuilder('roles')
+        .select(['roles.role_code', 'roles.role_name', 
+            'roles.screens','roles.id'])
+        .where({is_active : true})
+
+        if(pagination?.page){
+            query = query
+            .limit(pagination.limit)
+            .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if(pagination?.search) {
+            query = query.andWhere('LOWER(roles.role_name) LIKE :roleName', { roleName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return {
+            list, count
+        }
     }
 
     async getRoleById(id:UUID){
@@ -53,8 +71,25 @@ export class AdminService {
         }
     }
 
-    async getAllUsers(){
-        return { users: await this.userRepository.find({ select:['id','emp_code', 'emp_name', 'role_id'], where: {is_active: true} }) }
+    async getAllUsers(pagination: Pagination){
+        let query = this.userRepository.createQueryBuilder('user')
+        .select(['user.emp_code', 'user.emp_name'])
+        .where({is_active : true})
+
+        if(pagination?.page){
+            query = query
+            .limit(pagination.limit)
+            .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if(pagination?.search) {
+            query = query.andWhere('LOWER(user.emp_name) LIKE :empName', { empName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return {
+            list, count
+        }
     }
 
     async getUserById(id:UUID){
@@ -127,7 +162,7 @@ export class AdminService {
         }
 
         if(pagination?.search){
-            query = query.andWhere('LOWER(suppliers.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
+            query = query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
         }
         
         const [list, count] = await query.getManyAndCount()
@@ -187,7 +222,7 @@ export class AdminService {
         }
 
         if(input?.search) {
-            query = query.andWhere('LOWER(customers.customerName) LIKE :customerName', { customerName: `%${input.search.toLowerCase()}%` })
+            query = query.andWhere('LOWER(customers.customer_name) LIKE :customerName', { customerName: `%${input.search.toLowerCase()}%` })
         }
 
         const [list, count] = await query.getManyAndCount()

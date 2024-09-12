@@ -1,5 +1,6 @@
-import { Column, Entity, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
+import { PartProcessEntity } from "./part_process.entity";
 import { VendorProcessEntity } from "./vendorProcess.entity";
 
 @Entity('vendors')
@@ -30,4 +31,8 @@ export abstract class VendorEntity extends BaseEntity{
 
     @OneToMany(()=> VendorProcessEntity, (vendorProcess)=>vendorProcess.process)
     process_list: VendorProcessEntity[];
+
+    // @ManyToOne(()=> PartProcessEntity, (partProcess)=> partProcess.part_process_vendor_list)
+    // @JoinColumn({name:'part_process_id'})
+    // part_process_vendor: PartProcessEntity;
 }

@@ -18,8 +18,8 @@ export class AdminController {
     }
 
     @Get('/roles')
-    getRoles(){
-        return this.adminService.getAllRoles()
+    getRoles(@Query() pagination: Pagination){
+        return this.adminService.getAllRoles(pagination)
     }
 
     @Get('/roles/:id')
@@ -33,8 +33,8 @@ export class AdminController {
     }
     
     @Get('/users')
-    getUsers(){
-        return this.adminService.getAllUsers()
+    getUsers(@Query() pagination: Pagination){
+        return this.adminService.getAllUsers(pagination)
     }
 
     @Get('/users/:id')

@@ -27,6 +27,7 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/typeorm": "^10.0.2",
     "class-validator": "^0.14.1",
+    "cors": "^2.8.5",
     "jsonwebtoken": "^9.0.2",
     "npm-watch": "^0.13.0",
     "pg": "^8.12.0",
