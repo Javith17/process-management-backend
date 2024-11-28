@@ -10,7 +10,19 @@ export abstract class SupplierEntity extends BaseEntity{
     supplier_code:string;
 
     @Column({ nullable:true })
-    supplier_address:string;
+    supplier_address1:string;
+
+    @Column({ nullable:true })
+    supplier_address2:string;
+
+    @Column({ nullable:true })
+    supplier_city:string;
+
+    @Column({ nullable:true })
+    supplier_state:string;
+
+    @Column({ nullable:true })
+    supplier_pincode:string;
 
     @Column({ nullable:true })
     supplier_mobile_no1:string;
@@ -20,6 +32,12 @@ export abstract class SupplierEntity extends BaseEntity{
 
     @Column({ nullable:true })
     supplier_account_no:string;
+
+    @Column({ nullable:true })
+    supplier_bank_name:string;
+
+    @Column({ nullable:true })
+    supplier_ifsc:string;
 
     @Column({ nullable:true })
     supplier_location:string;

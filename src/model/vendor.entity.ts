@@ -9,13 +9,22 @@ export abstract class VendorEntity extends BaseEntity{
     vendor_name:string;
 
     @Column({ nullable:true })
-    vendor_code:string;
+    vendor_address1:string;
 
     @Column({ nullable:true })
-    vendor_address:string;
+    vendor_address2:string;
 
     @Column({ nullable:true })
     vendor_gst:string;
+
+    @Column({ nullable:true })
+    vendor_city:string;
+
+    @Column({ nullable:true })
+    vendor_state:string;
+
+    @Column({ nullable:true })
+    vendor_pincode:string;
 
     @Column({ nullable:true })
     vendor_mobile_no1:string;
@@ -25,6 +34,12 @@ export abstract class VendorEntity extends BaseEntity{
 
     @Column({ nullable:true })
     vendor_account_no:string;
+
+    @Column({ nullable:true })
+    vendor_bank_name:string;
+
+    @Column({ nullable:true })
+    vendor_ifsc:string;
 
     @Column({ nullable:true })
     vendor_location:string;

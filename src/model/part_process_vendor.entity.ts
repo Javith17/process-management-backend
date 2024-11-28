@@ -12,10 +12,13 @@ export abstract class PartProcessVendorEntity extends BaseEntity{
     @JoinColumn({name:'part_process_id'})
     part_process: PartProcessEntity;
 
-    @OneToOne(() => VendorEntity, (vendor) => vendor.id)
+    @ManyToOne(() => VendorEntity, (vendor) => vendor.id)
     @JoinColumn({name: 'vendor_id'})
     vendor: VendorEntity;
 
     @Column({ nullable:true })
     part_process_vendor_price:string;
+
+    @Column({ nullable:true })
+    part_process_vendor_delivery_time:string;
 }

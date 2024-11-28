@@ -13,6 +13,12 @@ export abstract class PartEntity extends BaseEntity{
     @Column({nullable: true})
     available_aty: number;
 
+    @Column({nullable: true})
+    part_category: string;
+
     @OneToMany(()=> PartProcessEntity, (partProcess)=>partProcess.part)
     part_process_list: PartProcessEntity[];
+
+    @Column({nullable: true})
+    days: number;
 }

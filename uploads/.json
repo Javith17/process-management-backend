@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.swarm.lite",
+      "sha256_cert_fingerprints":
+        ["B1:E2:5C:4F:EE:97:0A:0A:1D:0F:B9:5F:27:E7:AF:D8:AB:18:40:0C:14:C2:9A:46:C7:33:9C:90:A4:89:56:F3","D4:B2:4F:9F:34:DA:1F:EE:2A:D1:2F:EF:E3:75:28:C2:C8:8B:FF:D9:92:EF:9F:AD:8F:F2:65:42:43:E1:66:EF"]
+    }
+  }
+]

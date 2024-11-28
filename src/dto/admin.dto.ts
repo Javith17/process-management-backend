@@ -52,11 +52,11 @@ export class CreateVendor{
     vendor_name:string;
 
     @IsString()
-    vendor_code:string;
+    @IsNotEmpty()
+    vendor_address1:string;
 
     @IsString()
-    @IsNotEmpty()
-    vendor_address:string;
+    vendor_address2:string;
 
     @IsString()
     vendor_gst:string;
@@ -64,6 +64,26 @@ export class CreateVendor{
     @IsString()
     @IsNotEmpty()
     vendor_account_no:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_bank_name:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_ifsc:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_city:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_state:string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_pincode:string;
 
     @IsString()
     vendor_location:string;
@@ -94,15 +114,23 @@ export class CreateSupplier{
     supplier_name:string;
 
     @IsString()
-    supplier_code:string;
+    supplier_address1:string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_address:string;
+    supplier_address2:string;
 
     @IsString()
     @IsNotEmpty()
     supplier_account_no:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_bank_name:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_ifsc:string;
 
     @IsString()
     supplier_location:string;
@@ -114,6 +142,18 @@ export class CreateSupplier{
     @IsString()
     @IsOptional()
     supplier_mobile_no2:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_city:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_state:string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_pincode:string;
 }
 
 export class CreateCustomer{
@@ -123,10 +163,31 @@ export class CreateCustomer{
 
     @IsString()
     @IsNotEmpty()
-    customer_address:string;
+    customer_address1:string;
 
     @IsString()
-    customer_account_detail:string;
+    @IsNotEmpty()
+    customer_city:string;
+    
+    @IsString()
+    @IsNotEmpty()
+    customer_state:string;
+    
+    @IsString()
+    @IsNotEmpty()
+    customer_pincode:string;
+
+    @IsString()
+    customer_address2:string;
+
+    @IsString()
+    customer_account_no:string;
+
+    @IsString()
+    customer_bank_name:string;
+    
+    @IsString()
+    customer_ifsc:string;
 
     @IsString()
     customer_mobile_no1:string;

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { SignIn } from "src/dto/auth.dto";
+import { AcceptByVendorDto, SignIn } from "src/dto/auth.dto";
+import { ProductionMachinePartEntity } from "src/model/production_machine_part.entity";
 import { RoleEntity } from "src/model/role.entity";
 import { UserEntity } from "src/model/user.entity";
 import { Repository } from "typeorm";
@@ -8,7 +9,8 @@ import { Repository } from "typeorm";
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>){}
+        @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>,
+        @InjectRepository(ProductionMachinePartEntity) private productionMachinePartRepo: Repository<ProductionMachinePartEntity>){}
 
     async signIn(signInDto: SignIn){
         const user =  await this.userRepo.createQueryBuilder('user')
@@ -32,5 +34,35 @@ export class AuthService {
             return { message: "Invalid login credentials" }
         }
     }
+
+    async getProductionPartDetail(id: string){
+        const result = await this.productionMachinePartRepo.createQueryBuilder('production_part')
+            .select([
+                'production_part.part_name',
+                'production_part.process_name',
+                'production_part.vendor_name',
+                'production_part.order_qty',
+                'production_part.delivery_date',
+                'production_part.vendor_accept_status'
+            ]).where('production_part.id = :id', { id })
+            .getOne()
+        
+        return { productionPart: result}
+    }
+
+    async acceptVendor(acceptByVendor: AcceptByVendorDto){
+        await this.productionMachinePartRepo.createQueryBuilder()
+                    .update(ProductionMachinePartEntity)
+                    .set({
+                        vendor_accept_at: new Date(),
+                        vendor_accept_remarks: acceptByVendor.remarks,
+                        vendor_accept_status: acceptByVendor.status,
+                        status: acceptByVendor.status == "accepted" ? 'Vendor In-Progress' : 'Vendor Rejected'
+                    })
+                    .where('id=:id', { id: acceptByVendor.id })
+                    .execute()
+                return { message: 'Order Accepted Successfully' }
+    }
+
 
 }

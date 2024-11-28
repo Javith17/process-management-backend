@@ -12,7 +12,7 @@ export abstract class PartProcessEntity extends BaseEntity{
     @JoinColumn({name:'part_id'})
     part: PartEntity;
 
-    @OneToOne(() => ProcessEntity, (process) => process.id)
+    @ManyToOne(() => ProcessEntity, (process) => process.id)
     @JoinColumn({name: 'process_id'})
     process: ProcessEntity;
 
@@ -24,4 +24,5 @@ export abstract class PartProcessEntity extends BaseEntity{
 
     @Column({nullable: true})
     process_time: string
+    
 }

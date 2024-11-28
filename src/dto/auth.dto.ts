@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class SignIn{
     @IsString()
@@ -8,4 +8,18 @@ export class SignIn{
     @IsString()
     @IsNotEmpty()
     password:string;
+}
+
+export class AcceptByVendorDto{
+    @IsString()
+    @IsNotEmpty()
+    id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    status: string;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
 }

@@ -1,6 +1,7 @@
-import { Body, Controller, HttpException, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SignIn } from 'src/dto/auth.dto';
+import { AcceptByVendorDto, SignIn } from 'src/dto/auth.dto';
+import { QuotationService } from 'src/quotation/quotation.service';
 import { AuthService } from './auth.service';
 const jwt = require('jsonwebtoken');
 
@@ -25,5 +26,15 @@ export class AuthController {
         }else{
             throw new HttpException("Invalid credentials", HttpStatus.FORBIDDEN)
         }
+    }
+
+    @Get('/productionPartDetail/:id')
+    async getProductionPartDetail(@Param('id') id: string){
+        return await this.authService.getProductionPartDetail(id)
+    }
+
+    @Post('/vendorAcceptStatus')
+    async acceptByVendor(@Body() acceptVendor: AcceptByVendorDto){
+        return await this.authService.acceptVendor(acceptVendor)
     }
 }

@@ -73,7 +73,7 @@ export class AdminService {
 
     async getAllUsers(pagination: Pagination){
         let query = this.userRepository.createQueryBuilder('user')
-        .select(['user.emp_code', 'user.emp_name'])
+        .select(['user.id', 'user.emp_code', 'user.emp_name'])
         .where({is_active : true})
 
         if(pagination?.page){
@@ -117,8 +117,25 @@ export class AdminService {
         return { message: "Process created successfully" }    
     }
 
-    async getAllProcess(){
-        return { process: await this.processRepository.find({ select:['id','process_name'], where: {is_active: true} }) }
+    async getAllProcess(pagination: Pagination){
+        let query = this.processRepository.createQueryBuilder('process')
+        .select(['process.id', 'process.process_name'])
+        .where({is_active : true})
+
+        if(pagination?.page){
+            query = query
+            .limit(pagination.limit)
+            .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if(pagination?.search) {
+            query = query.andWhere('LOWER(process.process_name) LIKE :processName', { processName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return {
+            list, count
+        }
     }
 
     async createNewVendor(vendorDto: CreateVendor){
@@ -129,13 +146,18 @@ export class AdminService {
         }
         const vendor = await this.vendorRepository.save({
             vendor_name: vendorDto.vendor_name,
-            vendor_code: vendorDto.vendor_code,
             vendor_account_no: vendorDto.vendor_account_no,
-            vendor_address: vendorDto.vendor_address,
+            vendor_address1: vendorDto.vendor_address1,
+            vendor_address2 : vendorDto.vendor_address2,
             vendor_gst: vendorDto.vendor_gst,
+            vendor_city: vendorDto.vendor_city,
+            vendor_state: vendorDto.vendor_state,
+            vendor_pincode: vendorDto.vendor_pincode,
             vendor_location: vendorDto.vendor_location,
             vendor_mobile_no1: vendorDto.vendor_mobile_no1,
-            vendor_mobile_no2: vendorDto.vendor_mobile_no2
+            vendor_mobile_no2: vendorDto.vendor_mobile_no2,
+            vendor_bank_name: vendorDto.vendor_bank_name,
+            vendor_ifsc: vendorDto.vendor_ifsc
         })
 
         vendorDto.vendor_process_list?.map(async (process) => {
@@ -147,25 +169,32 @@ export class AdminService {
     }
 
     async getVendorsList(pagination: Pagination){
-        let query = await this.vendorRepository.createQueryBuilder('vendor')
-            .leftJoinAndSelect('vendor.process_list','process')
+        let id_query = this.vendorRepository.createQueryBuilder('vendor')
+            .select(['vendor.id'])
+       
+            if(pagination?.page){
+                id_query = id_query
+                .take(pagination.limit)
+                .skip((pagination.page - 1) * pagination.limit)    
+            }
+    
+            if(pagination?.search){
+                id_query = id_query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
+            }
+        const ids = await id_query.getMany()
+        const count = await id_query.getCount()
+
+        let query = this.vendorRepository.createQueryBuilder('vendor')
+            .innerJoinAndSelect('vendor.process_list','process')
             .select(['vendor.id','vendor.vendor_name',
-            'vendor.vendor_code','vendor.vendor_address',
-            'vendor.vendor_gst', 'vendor.vendor_account_no',
+            'vendor.vendor_address1','vendor.vendor_address2',
+            'vendor.vendor_gst', 'vendor.vendor_account_no','vendor.vendor_bank_name',
+            'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
             'vendor.vendor_mobile_no1','vendor.vendor_mobile_no2',
             'vendor.vendor_location','process.process_id','process.process_name'])
+            .where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
         
-        if(pagination?.page){
-            query = query
-            .limit(pagination.limit)
-            .offset((pagination.page - 1) * pagination.limit)    
-        }
-
-        if(pagination?.search){
-            query = query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
-        }
-        
-        const [list, count] = await query.getManyAndCount()
+        const list = await query.getMany()
         return { list, count }
     }
 
@@ -180,10 +209,12 @@ export class AdminService {
 
     async getSuppliers(input: { page?:number, limit?:number, search?:string }){
         let query = this.supplierRepository.createQueryBuilder('suppliers')
-        .select(['suppliers.supplier_name', 'suppliers.supplier_code', 
-            'suppliers.supplier_address','suppliers.supplier_mobile_no1',
+        .select(['suppliers.id','suppliers.supplier_name', 'suppliers.supplier_address1', 
+            'suppliers.supplier_address2','suppliers.supplier_mobile_no1',
             'suppliers.supplier_mobile_no2','suppliers.supplier_account_no', 
-            'suppliers.supplier_location'])
+            'suppliers.supplier_bank_name', 'suppliers.supplier_ifsc',  
+            'suppliers.supplier_location', 'suppliers.supplier_city',
+            'suppliers.supplier_state', 'suppliers.supplier_pincode'])
         .where({is_active : true})
 
         if(input?.page){

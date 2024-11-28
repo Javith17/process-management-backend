@@ -53,8 +53,8 @@ export class AdminController {
     }
 
     @Get('/processList')
-    getProcessList(){
-        return this.adminService.getAllProcess()
+    getProcessList(@Query() pagination: Pagination){
+        return this.adminService.getAllProcess(pagination)
     }
 
     @Post('/createVendor')
