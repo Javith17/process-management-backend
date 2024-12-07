@@ -1,5 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
+--TItle for Script file
 CREATE TABLE IF NOT EXISTS "roles" (
     "id" uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
     "roleName" character varying NOT NULL,
