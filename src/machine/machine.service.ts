@@ -1,4 +1,3 @@
-import { create } from '@mui/material/styles/createTransitions';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -130,7 +129,8 @@ export class MachineService {
     }
 
     async getPartsList(pagination: Pagination) {
-        let ids_query = this.partRepository.createQueryBuilder('parts')
+        try{
+            let ids_query = this.partRepository.createQueryBuilder('parts')
             .select(['parts.id'])
 
         if (pagination?.page) {
@@ -167,10 +167,20 @@ export class MachineService {
                 'vendor.id',
                 'vendor.vendor_name'
             ])
-            .where("parts.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+            if(ids.length > 0){
+                query = query.where("parts.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+            }
 
         const list = await query.getMany()
         return { list, count }
+        }catch(err){
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err.message,
+              }, HttpStatus.FORBIDDEN, {
+                cause: err.message
+              }); 
+        }
     }
 
     async createNewBoughtOut(createBoughtOutDto: CreateBoughtOut) {

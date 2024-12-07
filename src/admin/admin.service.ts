@@ -4,6 +4,9 @@ import { UUID } from 'crypto';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { CustomerEntity } from 'src/model/customer.entity';
+import { PartEntity } from 'src/model/part.entity';
+import { PartProcessEntity } from 'src/model/part_process.entity';
+import { PartProcessVendorEntity } from 'src/model/part_process_vendor.entity';
 import { ProcessEntity } from 'src/model/process.entity';
 import { RoleEntity } from 'src/model/role.entity';
 import { SupplierEntity } from 'src/model/supplier.entity';
@@ -20,8 +23,12 @@ export class AdminService {
         @InjectRepository(ProcessEntity) private processRepository: Repository<ProcessEntity>,
         @InjectRepository(VendorEntity) private vendorRepository: Repository<VendorEntity>,
         @InjectRepository(VendorProcessEntity) private vendorProcessRepository: Repository<VendorProcessEntity>,
+        @InjectRepository(PartProcessVendorEntity) private partProcessVendorRepo: Repository<PartProcessVendorEntity>,
+        @InjectRepository(PartProcessEntity) private partProcessRepo: Repository<PartProcessEntity>,
+        @InjectRepository(ProcessEntity) private processRepo: Repository<ProcessEntity>,
         @InjectRepository(SupplierEntity) private supplierRepository: Repository<SupplierEntity>,
-        @InjectRepository(CustomerEntity) private customerRepository: Repository<CustomerEntity>
+        @InjectRepository(CustomerEntity) private customerRepository: Repository<CustomerEntity>,
+        @InjectRepository(PartEntity) private partsRepo: Repository<PartEntity>
     ){}
     
     async createRole(roleDto: CreateRole){
@@ -168,8 +175,78 @@ export class AdminService {
         return { message: "Vendor created successfully" }
     }
 
+    async updateVendor(vendorDto: CreateVendor){
+        const existingVendor = await this.vendorRepository.findOne({ 
+            where: {is_active: true, vendor_name: vendorDto.vendor_name, } })
+
+        if(existingVendor.id != vendorDto.vendor_id){
+            return { message: "Vendor name already exists" }
+        }
+        
+        const vendor = await this.vendorRepository.update({id: vendorDto.vendor_id},{
+            vendor_name: vendorDto.vendor_name,
+            vendor_account_no: vendorDto.vendor_account_no,
+            vendor_address1: vendorDto.vendor_address1,
+            vendor_address2 : vendorDto.vendor_address2,
+            vendor_gst: vendorDto.vendor_gst,
+            vendor_city: vendorDto.vendor_city,
+            vendor_state: vendorDto.vendor_state,
+            vendor_pincode: vendorDto.vendor_pincode,
+            vendor_location: vendorDto.vendor_location,
+            vendor_mobile_no1: vendorDto.vendor_mobile_no1,
+            vendor_mobile_no2: vendorDto.vendor_mobile_no2,
+            vendor_bank_name: vendorDto.vendor_bank_name,
+            vendor_ifsc: vendorDto.vendor_ifsc
+        })
+
+        const vendorProcessList = await this.vendorProcessRepository.find({ 
+            where: {vendor_id: vendorDto.vendor_id } })
+
+        vendorDto.vendor_process_list?.map(async (process) => {
+            if(vendorProcessList.filter((vp:any) => vp.process_id == process.process_id)?.length == 0){
+                var vendorProcessObj = { vendor: existingVendor, process_id: process.process_id, process_name: process.process_name, vendor_id: vendorDto.vendor_id}
+                await this.vendorProcessRepository.save(vendorProcessObj)
+            }
+        })
+
+        vendorProcessList?.map(async (process: any) => {
+            if(vendorDto.vendor_process_list.filter((vpl:any) => process.process_id == vpl.process_id)?.length == 0){
+                await this.vendorProcessRepository.remove(process)
+                const currentProcess = await this.processRepo.findOne({where: {id: process.process_id}})
+                const partProcessList = await this.partProcessRepo.createQueryBuilder('part_process')
+                    .leftJoinAndSelect('part_process.process', 'process')
+                    .leftJoinAndSelect('part_process.part', 'part')
+                    .where('process.id= :process_id', { process_id: process.process_id})
+                    .getMany()
+                partProcessList?.map(async (pp:any) => {
+                    await this.partProcessVendorRepo.delete({vendor: existingVendor, part_process: pp })
+                    await this.updatePartDays(pp.part.id)
+                })
+            }
+        })
+
+        return { message: "Vendor updated successfully" }
+    }
+
+    async updatePartDays(part_id: string) {
+        const daysQuery = await this.partProcessVendorRepo.createQueryBuilder('v')
+            .leftJoinAndSelect('v.part_process', 'part_process')
+            .leftJoinAndSelect('part_process.part', 'part')
+            .select(['min(v.part_process_vendor_delivery_time::int) as vl', 'part_process.id'])
+            .groupBy('part_process.id')
+            .where('part.id::VARCHAR=:id', { id: part_id })
+            .getRawMany()
+        const days = daysQuery.reduce((n, { vl }) => n + vl, 0)
+
+        await this.partsRepo.createQueryBuilder()
+            .update(PartEntity).set({ days: days })
+            .where('id::VARCHAR=:id', { id: part_id })
+            .execute()
+    }
+
     async getVendorsList(pagination: Pagination){
-        let id_query = this.vendorRepository.createQueryBuilder('vendor')
+        try{
+            let id_query = this.vendorRepository.createQueryBuilder('vendor')
             .select(['vendor.id'])
        
             if(pagination?.page){
@@ -192,10 +269,30 @@ export class AdminService {
             'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
             'vendor.vendor_mobile_no1','vendor.vendor_mobile_no2',
             'vendor.vendor_location','process.process_id','process.process_name'])
-            .where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+
+            if(ids.length > 0){
+                query = query.where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+            }
         
         const list = await query.getMany()
         return { list, count }
+        }catch(err){
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err.message,
+              }, HttpStatus.FORBIDDEN, {
+                cause: err.message
+              }); 
+        }
+    }
+
+    async getVendorById(id:UUID){
+        const vendor = await this.vendorRepository.findOne({ where: {is_active: true, id: id} })
+        if(vendor){
+            const vendorProcess = await this.vendorProcessRepository.find({ where: {vendor_id: vendor.id }})
+            return { vendor: vendor, vendorProcess };
+        }
+        throw new HttpException("No supplier found", HttpStatus.NOT_FOUND)
     }
 
     async createNewSupplier(supplierDto: CreateSupplier){
@@ -233,6 +330,40 @@ export class AdminService {
         }
     }
 
+    async updateSupplier(supplierDto: CreateSupplier){
+        const existingSupplier = await this.supplierRepository.findOne({ 
+            where: {is_active: true, supplier_name: supplierDto.supplier_name, } })
+
+        if(existingSupplier.id != supplierDto.supplier_id){
+            return { message: "Supplier name already exists" }
+        }
+        
+        await this.supplierRepository.update({id: supplierDto.supplier_id},{
+            supplier_name: supplierDto.supplier_name,
+            supplier_account_no: supplierDto.supplier_account_no,
+            supplier_address1: supplierDto.supplier_address1,
+            supplier_address2 : supplierDto.supplier_address2,
+            supplier_city: supplierDto.supplier_city,
+            supplier_state: supplierDto.supplier_state,
+            supplier_pincode: supplierDto.supplier_pincode,
+            supplier_location: supplierDto.supplier_location,
+            supplier_mobile_no1: supplierDto.supplier_mobile_no1,
+            supplier_mobile_no2: supplierDto.supplier_mobile_no2,
+            supplier_bank_name: supplierDto.supplier_bank_name,
+            supplier_ifsc: supplierDto.supplier_ifsc
+        })
+
+        return { message: "Supplier updated successfully" }
+    }
+
+    async getSupplierById(id:UUID){
+        const supplier = await this.supplierRepository.findOne({ where: {is_active: true, id: id} })
+        if(supplier){
+            return { supplier };
+        }
+        throw new HttpException("No supplier found", HttpStatus.NOT_FOUND)
+    }
+
     async createNewCustomer(customerDto: CreateCustomer){
         const customer = await this.customerRepository.find({ select:['id','customer_name'], where: {is_active: true, customer_name: customerDto.customer_name} })
         if(customer.length > 0){
@@ -260,6 +391,41 @@ export class AdminService {
         return {
             list, count
         }
+    }
 
+    async getCustomerById(id:UUID){
+        const customer = await this.customerRepository.findOne({ where: {is_active: true, id: id} })
+        if(customer){
+            return { customer };
+        }
+        throw new HttpException("No customer found", HttpStatus.NOT_FOUND)
+    }
+
+    async updateCustomer(customerDto: CreateCustomer){
+        const existingCustomer = await this.customerRepository.findOne({ 
+            where: {is_active: true, customer_name: customerDto.customer_name, } })
+
+        if(existingCustomer.id != customerDto.customer_id){
+            return { message: "Customer name already exists" }
+        }
+        
+        await this.customerRepository.update({id: customerDto.customer_id},{
+            customer_name: customerDto.customer_name,
+            customer_account_no: customerDto.customer_account_no,
+            customer_address1: customerDto.customer_address1,
+            customer_address2 : customerDto.customer_address2,
+            customer_city: customerDto.customer_city,
+            customer_state: customerDto.customer_state,
+            customer_pincode: customerDto.customer_pincode,
+            customer_mobile_no1: customerDto.customer_mobile_no1,
+            customer_mobile_no2: customerDto.customer_mobile_no2,
+            customer_bank_name: customerDto.customer_bank_name,
+            customer_ifsc: customerDto.customer_ifsc,
+            is_machine: customerDto.is_machine,
+            is_spares: customerDto.is_spares,
+            is_spm: customerDto.is_spm
+        })
+
+        return { message: "Customer updated successfully" }
     }
 }

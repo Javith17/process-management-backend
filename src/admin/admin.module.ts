@@ -9,10 +9,14 @@ import { VendorEntity } from "src/model/vendor.entity";
 import { VendorProcessEntity } from "src/model/vendorProcess.entity";
 import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
+import { PartProcessEntity } from "src/model/part_process.entity";
+import { PartProcessVendorEntity } from "src/model/part_process_vendor.entity";
+import { PartEntity } from "src/model/part.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([RoleEntity, UserEntity, ProcessEntity, VendorEntity, 
-        VendorProcessEntity, SupplierEntity, CustomerEntity])],
+        VendorProcessEntity, SupplierEntity, CustomerEntity, PartProcessEntity, PartProcessVendorEntity,
+        PartEntity])],
     controllers: [AdminController],
     providers: [AdminService]
   })

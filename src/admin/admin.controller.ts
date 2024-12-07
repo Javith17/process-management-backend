@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
@@ -62,6 +62,16 @@ export class AdminController {
         return this.adminService.createNewVendor(createVendor)
     }
 
+    @Post('/updateVendor')
+    updateVendor(@Body() createVendor: CreateVendor){
+        return this.adminService.updateVendor(createVendor)
+    }
+
+    @Get('/vendor/:id')
+    getVendorById(@Param('id') id:UUID){
+        return this.adminService.getVendorById(id)
+    }
+
     @Get('/vendorsList')
     getVendors(@Query() pagination: Pagination){
         return this.adminService.getVendorsList(pagination)
@@ -77,6 +87,16 @@ export class AdminController {
         return this.adminService.getSuppliers(pagination)
     }
 
+    @Get('/supplier/:id')
+    getSupplierById(@Param('id') id:UUID){
+        return this.adminService.getSupplierById(id)
+    }
+
+    @Post('/updateSupplier')
+    updateSupplier(@Body() createSupplier: CreateSupplier){
+        return this.adminService.updateSupplier(createSupplier)
+    }
+
     @Post('/createCustomer')
     createCustomer(@Body() createCustomer: CreateCustomer){
         return this.adminService.createNewCustomer(createCustomer)
@@ -85,5 +105,15 @@ export class AdminController {
     @Get('/customersList')
     getCustomers(@Query() pagination: Pagination){
         return this.adminService.getCustomers(pagination)
+    }
+
+    @Get('/customer/:id')
+    getCustomerDetail(@Param('id') id:UUID){
+        return this.adminService.getCustomerById(id)
+    }
+
+    @Post('/updateCustomer')
+    updateCustomer(@Body() createCustomer: CreateCustomer){
+        return this.adminService.updateCustomer(createCustomer)
     }
 }

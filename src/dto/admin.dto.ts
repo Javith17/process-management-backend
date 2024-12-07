@@ -48,6 +48,9 @@ export class CreateProcess{
 
 export class CreateVendor{
     @IsString()
+    vendor_id: UUID;
+    
+    @IsString()
     @IsNotEmpty()
     vendor_name:string;
 
@@ -111,6 +114,10 @@ export class CreateVendorProcess{
 export class CreateSupplier{
     @IsString()
     @IsNotEmpty()
+    supplier_id:string;
+
+    @IsString()
+    @IsNotEmpty()
     supplier_name:string;
 
     @IsString()
@@ -158,6 +165,9 @@ export class CreateSupplier{
 
 export class CreateCustomer{
     @IsString()
+    customer_id:string;
+
+    @IsString()
     @IsNotEmpty()
     customer_name:string;
 
@@ -199,7 +209,7 @@ export class CreateCustomer{
     is_machine:boolean;
 
     @IsBoolean()
-    is_sares:boolean;
+    is_spares:boolean;
 
     @IsBoolean()
     is_spm:boolean;
