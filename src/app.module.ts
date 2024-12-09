@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
@@ -38,16 +38,17 @@ import { ProductionPartRescheduleEntity } from './model/production_part_reschedu
 import { ProductionMachineBoughtoutEntity } from './model/production_machine_boughtout.entity';
 import { ProductionMachineHistoryEntity } from './model/production_machine_history.entity';
 import { OrderModule } from './order/order.module';
+ConfigModule.forRoot()
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'root',
-      database: 'process_mgnt_1',
+      host: process.env.PG_HOST,
+      port: Number(process.env.PG_PORT),
+      username: process.env.PG_USERNAME,
+      password: process.env.PG_PASSWORD,
+      database: process.env.PG_DB,
       entities: [ UserEntity, RoleEntity, ProcessEntity, VendorEntity, VendorProcessEntity, 
         SupplierEntity, CustomerEntity, PartEntity, PartProcessEntity, PartProcessVendorEntity,
         BoughtOutEntity, BoughtOutSuppliertEntity, MachineEntity, SubAssemblyEntity, SubAssemblyDetailEntity,
