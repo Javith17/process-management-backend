@@ -77,3 +77,147 @@ INSERT INTO public.roles(
 INSERT INTO public.users(
 	id, "emp_name", "emp_code", password,role_id)
 	VALUES ('64f62c4e-0766-49f6-9a6b-e3a8bc6a1562', 'admin', 'admin', 'admin', '9cf85834-0841-4c25-adf8-b4d2e077ec4b');
+
+insert into roles(is_active,role_name,role_code,screens) values
+('true', 'Super Admin', 'R001', '[
+ {
+	 "screen":"dashboard", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"roles", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"users", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"vendor", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"supplier", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"customer", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"process", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"parts", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"boughtouts", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"subAssembly", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"machines", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"quotations", 
+	 "permission":["view","edit", "approve"]
+ },
+ {
+ 	 "screen":"orders", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"stores", 
+	 "permission":["view", "edit"]
+ }
+ ]');
+
+insert into roles(is_active,role_name,role_code,screens) values
+('true', 'Admin', 'R002', '[
+ {
+	 "screen":"dashboard", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"users", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"roles", 
+	 "permission":["view"]
+ },
+ {
+	 "screen":"vendor", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"supplier", 
+	 "permission":["view","edit"]
+ },
+ {
+	 "screen":"quotations", 
+	 "permission":["view","edit"]
+ }
+ ]');
+
+ insert into roles(is_active,role_name,role_code,screens) values
+('true', 'Stores', 'R003', '[
+ {
+	 "screen":"dashboard", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"vendor", 
+	 "permission":["view"]
+ },
+ {
+	 "screen":"supplier", 
+	 "permission":["view"]
+ },
+ {
+	 "screen":"orders", 
+	 "permission":["view"]
+ },
+ {
+ 	 "screen":"stores", 
+	 "permission":["view", "edit"]
+ }
+ ]');
+
+ insert into roles(is_active,role_name,role_code,screens) values
+('true', 'Engineer', 'R003', '[
+ {
+	 "screen":"dashboard", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"process", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"parts", 
+	 "permission":["view", "edit"]
+ },
+ {
+	 "screen":"boughtouts", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"subAssembly", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"machines", 
+	 "permission":["view", "edit"]
+ },
+ {
+ 	 "screen":"orders", 
+	 "permission":["view", "edit"]
+ }
+ ]');

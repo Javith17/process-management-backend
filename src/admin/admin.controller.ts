@@ -12,6 +12,11 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
   
+    @Get("/check")
+    checkController(){
+        return 'Connected successfully'
+    }
+
     @Post('/createRole')
     createRole(@Body() createRole: CreateRole){
         return this.adminService.createRole(createRole);
