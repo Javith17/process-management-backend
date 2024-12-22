@@ -29,7 +29,8 @@ import { OrderService } from "./order.service";
       UserEntity, OrderConfirmationEntity, SubAssemblyEntity, ProductionMachinePartEntity,
       PartProcessEntity, 
       BoughtOutSuppliertEntity, ProductionPartRescheduleEntity,
-      ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity])],
+      ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
+      VendorEntity, MachineEntity, CustomerEntity, OrderConfirmationEntity])],
     controllers: [OrderController],
     providers: [OrderService]
   })

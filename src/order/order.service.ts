@@ -4,6 +4,8 @@ import { UUID } from 'crypto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
+import { CustomerEntity } from 'src/model/customer.entity';
+import { MachineEntity } from 'src/model/machine.entity';
 import { MachineQuotationEntity } from 'src/model/machine_quotation.entity';
 import { OrderConfirmationEntity } from 'src/model/order_confirmation.entity';
 import { PartProcessEntity } from 'src/model/part_process.entity';
@@ -12,6 +14,7 @@ import { ProductionMachineHistoryEntity } from 'src/model/production_machine_his
 import { ProductionMachinePartEntity } from 'src/model/production_machine_part.entity';
 import { ProductionPartRescheduleEntity } from 'src/model/production_part_reschedule.entity';
 import { UserEntity } from 'src/model/user.entity';
+import { VendorEntity } from 'src/model/vendor.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -24,7 +27,10 @@ export class OrderService {
         @InjectRepository(PartProcessEntity) private partProcessRepo: Repository<PartProcessEntity>,
         @InjectRepository(BoughtOutSuppliertEntity) private boughoutSupplierRepo: Repository<BoughtOutSuppliertEntity>,
         @InjectRepository(ProductionPartRescheduleEntity) private reschedulePartRepo: Repository<ProductionPartRescheduleEntity>,
-        @InjectRepository(ProductionMachineHistoryEntity) private historyRepo: Repository<ProductionMachineHistoryEntity>
+        @InjectRepository(ProductionMachineHistoryEntity) private historyRepo: Repository<ProductionMachineHistoryEntity>,
+        @InjectRepository(VendorEntity) private vendorRepo: Repository<VendorEntity>,
+        @InjectRepository(MachineEntity) private machineRepo: Repository<MachineEntity>,
+        @InjectRepository(CustomerEntity) private customerRepo: Repository<CustomerEntity>
     ) { }
 
     async getOrdersList(pagination: Pagination) {
@@ -431,5 +437,41 @@ export class OrderService {
         const result = await queryBuilder.getRawMany();
 
         return result;
+    }
+
+    async partsListFilter(filter_by: string, from_date: string, to_date: string) {
+        let queryBuilder = this.orderConfirmationRepository
+            .createQueryBuilder('o')
+            .innerJoin(ProductionMachinePartEntity, 'pm', 'o.id = pm.order_id')
+            .innerJoin(MachineQuotationEntity, 'q', 'q.id = o.quotation_id')
+            .innerJoin(VendorEntity, 'v', 'pm.vendor_id = v.id::VARCHAR')
+            .select([
+                'q.quotation_no',
+                'pm.part_name',
+                'pm.order_qty',
+                'o.machine_name',
+                'pm.process_name',
+                'pm.vendor_name',
+                'v.vendor_mobile_no1'
+            ])
+            if(filter_by == "reminder"){
+                queryBuilder = queryBuilder.where(`to_char(to_date(pm.reminder_date, 'YYYY-MM-dd'), 'dd-MM-YYYY')=:date`, { date: from_date })
+            }else if(filter_by == "delivery"){
+                queryBuilder = queryBuilder.where(`to_char(to_date(pm.delivery_date, 'YYYY-MM-dd'), 'dd-MM-YYYY')=:date`, { date: from_date })
+            }
+            
+
+        const result = await queryBuilder.getRawMany();
+
+        return result;
+    }
+
+    async dashboardDetails(){
+        const vendors = await this.vendorRepo.count({where: { is_active: true }})
+        const customers = await this.customerRepo.count({where: { is_active: true }})
+        const machines = await this.machineRepo.count({ where: {is_active: true }})
+        const pendingOrders = await this.orderConfirmationRepository.count({ where: { status: 'In-Progress' } })
+        const completedOrders = await this.orderConfirmationRepository.count({ where: { status: 'Completed' } })
+        return { vendors, customers, machines, pendingOrders, completedOrders}
     }
 }

@@ -43,6 +43,11 @@ export class QuotationController {
         return this.quotationService.machineQuotationList(pagination)
     }
 
+    @Get('/machineQuotationListReminder/:date')
+    getMachineQuotationListReminder(@Query() pagination: Pagination, @Param("date") date: string){
+        return this.quotationService.machineQuotationListReminder(pagination, date)
+    }
+
     @Get('/vendorQuotationList')
     getVendorQuotationList(@Query() pagination: Pagination){
         return this.quotationService.vendorQuotationList(pagination)

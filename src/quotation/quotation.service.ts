@@ -229,6 +229,43 @@ export class QuotationService {
         return { list, count }
     }
 
+    async machineQuotationListReminder(pagination: Pagination, date: string) {
+        let query = this.machineQuotationRepository.createQueryBuilder('machine_quotation')
+            .leftJoinAndSelect('machine_quotation.machine', 'machine')
+            .leftJoinAndSelect('machine_quotation.customer', 'customer')
+            .leftJoinAndSelect('machine_quotation.user', 'user')
+            .select([
+                'machine_quotation.id',
+                'machine_quotation.quotation_no',
+                'machine_quotation.quotation_date',
+                'machine_quotation.reminder_date',
+                'machine_quotation.qty',
+                'machine_quotation.remarks',
+                'machine.id',
+                'machine.machine_name',
+                'customer.id',
+                'customer.customer_name',
+                'user.id',
+                'user.emp_name',
+                'machine_quotation.initial_cost',
+                'machine_quotation.status'
+            ])
+            .where(`to_char(machine_quotation.reminder_date, 'dd-MM-YYYY')=:date`, { date })
+
+        if (pagination?.page) {
+            query = query
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if (pagination?.search) {
+            query = query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return { list, count }
+    }
+
     async vendorQuotationList(pagination: Pagination) {
         let query = this.vendorQuotationRepo.createQueryBuilder('vendor_quotation')
             .leftJoinAndSelect('vendor_quotation.vendor', 'vendor')
