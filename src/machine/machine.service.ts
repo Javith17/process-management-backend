@@ -183,6 +183,40 @@ export class MachineService {
         }
     }
 
+    async getPartsListInStore(pagination: Pagination) {
+        try{
+            let query = this.partRepository.createQueryBuilder('parts')
+            .select([
+                'parts.id',
+                'parts.part_name',
+                'parts.minimum_stock_qty',
+                'parts.available_aty',
+                'parts.days'
+            ])
+            .where('parts.available_aty > 0')
+
+        if (pagination?.page) {
+            query = query
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if (pagination?.search) {
+            query = query.andWhere('LOWER(part.part_name) LIKE :partName', { partName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return { list, count }
+        }catch(err){
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err.message,
+              }, HttpStatus.FORBIDDEN, {
+                cause: err.message
+              }); 
+        }
+    }
+
     async createNewBoughtOut(createBoughtOutDto: CreateBoughtOut) {
         const existingBoughtOut = await this.boughtOutRepository.find({ select: ['id', 'bought_out_name'], where: { is_active: true, bought_out_name: createBoughtOutDto.bought_out_name } })
 

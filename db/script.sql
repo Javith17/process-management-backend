@@ -80,144 +80,294 @@ INSERT INTO public.users(
 
 insert into roles(is_active,role_name,role_code,screens) values
 ('true', 'Super Admin', 'R001', '[
- {
-	 "screen":"dashboard", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"roles", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"users", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"vendor", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"supplier", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"customer", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"process", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"parts", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"boughtouts", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"subAssembly", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"machines", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"quotations", 
-	 "permission":["view","edit", "approve"]
- },
- {
- 	 "screen":"orders", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"stores", 
-	 "permission":["view", "edit"]
- }
- ]');
+  {
+    "name": "Dashboard",
+    "type": "home",
+    "screen": "dashboard",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Roles",
+    "type": "home",
+    "screen": "roles",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Users",
+    "type": "home",
+    "screen": "users",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Vendors",
+    "type": "vendor",
+    "screen": "vendor",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Suppliers",
+    "type": "vendor",
+    "screen": "supplier",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Customers",
+    "type": "vendor",
+    "screen": "customer",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Process",
+    "type": "part",
+    "screen": "process",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Parts",
+    "type": "part",
+    "screen": "parts",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Boughtouts",
+    "type": "part",
+    "screen": "boughtouts",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Sub Assembly",
+    "type": "part",
+    "screen": "subAssembly",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Machines",
+    "type": "part",
+    "screen": "machines",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Quotations",
+    "type": "order",
+    "screen": "quotations",
+    "permission": [
+      "view",
+      "edit",
+      "approve"
+    ]
+  },
+  {
+    "name": "Orders",
+    "type": "order",
+    "screen": "orders",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Stores",
+    "type": "home",
+    "screen": "stores",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  }
+]');
 
 insert into roles(is_active,role_name,role_code,screens) values
 ('true', 'Admin', 'R002', '[
- {
-	 "screen":"dashboard", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"users", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"roles", 
-	 "permission":["view"]
- },
- {
-	 "screen":"vendor", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"supplier", 
-	 "permission":["view","edit"]
- },
- {
-	 "screen":"quotations", 
-	 "permission":["view","edit"]
- }
- ]');
+  {
+    "name": "Dashboard",
+    "type": "home",
+    "screen": "dashboard",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Users",
+    "type": "home",
+    "screen": "users",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Roles",
+    "type": "home",
+    "screen": "roles",
+    "permission": [
+      "view"
+    ]
+  },
+  {
+    "name": "Vendors",
+    "type": "vendor",
+    "screen": "vendor",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Suppliers",
+    "type": "vendor",
+    "screen": "supplier",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Quotations",
+    "type": "order",
+    "screen": "quotations",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  }
+]');
 
  insert into roles(is_active,role_name,role_code,screens) values
 ('true', 'Stores', 'R003', '[
- {
-	 "screen":"dashboard", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"vendor", 
-	 "permission":["view"]
- },
- {
-	 "screen":"supplier", 
-	 "permission":["view"]
- },
- {
-	 "screen":"orders", 
-	 "permission":["view"]
- },
- {
- 	 "screen":"stores", 
-	 "permission":["view", "edit"]
- }
- ]');
+  {
+    "name": "Dashboard",
+    "type": "home",
+    "screen": "dashboard",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Vendors",
+    "type": "vendor",
+    "screen": "vendor",
+    "permission": [
+      "view"
+    ]
+  },
+  {
+    "name": "Suppliers",
+    "type": "vendor",
+    "screen": "supplier",
+    "permission": [
+      "view"
+    ]
+  },
+  {
+    "name": "Orders",
+    "type": "order",
+    "screen": "orders",
+    "permission": [
+      "view"
+    ]
+  },
+  {
+    "name": "Stores",
+    "type": "home",
+    "screen": "stores",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  }
+]');
 
  insert into roles(is_active,role_name,role_code,screens) values
 ('true', 'Engineer', 'R003', '[
- {
-	 "screen":"dashboard", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"process", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"parts", 
-	 "permission":["view", "edit"]
- },
- {
-	 "screen":"boughtouts", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"subAssembly", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"machines", 
-	 "permission":["view", "edit"]
- },
- {
- 	 "screen":"orders", 
-	 "permission":["view", "edit"]
- }
- ]');
+  {
+    "name": "Dashboard",
+    "screen": "dashboard",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Process",
+    "screen": "process",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Parts",
+    "screen": "parts",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Boughtouts",
+    "screen": "boughtouts",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Sub Assembly",
+    "screen": "subAssembly",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Machines",
+    "screen": "machines",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
+    "name": "Orders",
+    "screen": "orders",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  }
+]');

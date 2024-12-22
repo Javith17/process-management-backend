@@ -27,4 +27,7 @@ export abstract class OrderConfirmationEntity extends BaseEntity{
 
     @Column({nullable: true})
     remarks: string;
+
+    @Column({ nullable: true })
+    status:string;
 }

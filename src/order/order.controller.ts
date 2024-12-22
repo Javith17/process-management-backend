@@ -74,4 +74,16 @@ export class OrderController {
     getDeliveryPendingPartsForStore(@Query() pagination: Pagination){
         return this.orderService.deliveryPendingParts()
     }
+
+    @Get('/partListFilter/:filter_by/:from_date/:to_date')
+    getPartsListByReminderDate(@Query() pagination:Pagination, 
+    @Param('filter_by') filter_by: string, @Param('from_date') from_date: string,
+    @Param('to_date') to_date: string){
+        return this.orderService.partsListFilter(filter_by, from_date, to_date)
+    }
+
+    @Get('/dashboardDetails')
+    getDashboardDetails(){
+        return this.orderService.dashboardDetails()
+    }
 }

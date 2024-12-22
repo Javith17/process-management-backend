@@ -28,6 +28,11 @@ export class MachineController {
         return this.machineService.getPartsList(pagination)
     }
 
+    @Get('/partsInStoresList')
+    getPartsInStoresList(@Query() pagination: Pagination){
+        return this.machineService.getPartsListInStore(pagination)
+    }
+
     @Get('/parts/:id')
     getPartDetail(@Param('id') id: UUID){
         return this.machineService.getPartDetail(id)
