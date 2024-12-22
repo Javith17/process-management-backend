@@ -5,7 +5,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     allowedHeaders: ['content-type', 'Authorization'],
-    origin: ['http://localhost:3000','http://localhost:3001', 'http://localhost:3002'],
+    origin: ['http://localhost:3000','http://localhost:3001', 'http://localhost:3002', 'https://confiengg.co.in'],
     methods:'GET,HEAD,PUT,PATCH,POST,DELETE',
     exposedHeaders: ['Authorization'],
     credentials: true
