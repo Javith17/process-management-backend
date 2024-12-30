@@ -199,6 +199,15 @@ insert into roles(is_active,role_name,role_code,screens) values
     ]
   },
   {
+    "name": "Assembly",
+    "type": "order",
+    "screen": "assembly",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
     "name": "Stores",
     "type": "home",
     "screen": "stores",
@@ -313,9 +322,10 @@ insert into roles(is_active,role_name,role_code,screens) values
 ]');
 
  insert into roles(is_active,role_name,role_code,screens) values
-('true', 'Engineer', 'R003', '[
+('true', 'Engineer', 'R004', '[
   {
     "name": "Dashboard",
+	"type": "home",
     "screen": "dashboard",
     "permission": [
       "view",
@@ -324,6 +334,7 @@ insert into roles(is_active,role_name,role_code,screens) values
   },
   {
     "name": "Process",
+	"type": "part",
     "screen": "process",
     "permission": [
       "view",
@@ -332,6 +343,7 @@ insert into roles(is_active,role_name,role_code,screens) values
   },
   {
     "name": "Parts",
+	"type": "part",
     "screen": "parts",
     "permission": [
       "view",
@@ -340,6 +352,7 @@ insert into roles(is_active,role_name,role_code,screens) values
   },
   {
     "name": "Boughtouts",
+	"type": "part",
     "screen": "boughtouts",
     "permission": [
       "view",
@@ -348,6 +361,7 @@ insert into roles(is_active,role_name,role_code,screens) values
   },
   {
     "name": "Sub Assembly",
+	"type": "part",
     "screen": "subAssembly",
     "permission": [
       "view",
@@ -356,6 +370,7 @@ insert into roles(is_active,role_name,role_code,screens) values
   },
   {
     "name": "Machines",
+	"type": "part",
     "screen": "machines",
     "permission": [
       "view",
@@ -363,7 +378,17 @@ insert into roles(is_active,role_name,role_code,screens) values
     ]
   },
   {
+    "name": "Assembly",
+    "type": "order",
+    "screen": "assembly",
+    "permission": [
+      "view",
+      "edit"
+    ]
+  },
+  {
     "name": "Orders",
+	"type": "order",
     "screen": "orders",
     "permission": [
       "view",

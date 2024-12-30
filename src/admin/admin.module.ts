@@ -12,11 +12,14 @@ import { AdminService } from "./admin.service";
 import { PartProcessEntity } from "src/model/part_process.entity";
 import { PartProcessVendorEntity } from "src/model/part_process_vendor.entity";
 import { PartEntity } from "src/model/part.entity";
+import { ProductionMachinePartEntity } from "src/model/production_machine_part.entity";
+import { ProductionMachineBoughtoutEntity } from "src/model/production_machine_boughtout.entity";
+import { OrderConfirmationEntity } from "src/model/order_confirmation.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([RoleEntity, UserEntity, ProcessEntity, VendorEntity, 
         VendorProcessEntity, SupplierEntity, CustomerEntity, PartProcessEntity, PartProcessVendorEntity,
-        PartEntity])],
+        PartEntity, ProductionMachinePartEntity, ProductionMachineBoughtoutEntity, OrderConfirmationEntity])],
     controllers: [AdminController],
     providers: [AdminService]
   })

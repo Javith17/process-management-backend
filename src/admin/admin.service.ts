@@ -4,10 +4,15 @@ import { UUID } from 'crypto';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { CustomerEntity } from 'src/model/customer.entity';
+import { MachineEntity } from 'src/model/machine.entity';
+import { MachineQuotationEntity } from 'src/model/machine_quotation.entity';
+import { OrderConfirmationEntity } from 'src/model/order_confirmation.entity';
 import { PartEntity } from 'src/model/part.entity';
 import { PartProcessEntity } from 'src/model/part_process.entity';
 import { PartProcessVendorEntity } from 'src/model/part_process_vendor.entity';
 import { ProcessEntity } from 'src/model/process.entity';
+import { ProductionMachineBoughtoutEntity } from 'src/model/production_machine_boughtout.entity';
+import { ProductionMachinePartEntity } from 'src/model/production_machine_part.entity';
 import { RoleEntity } from 'src/model/role.entity';
 import { SupplierEntity } from 'src/model/supplier.entity';
 import { UserEntity } from 'src/model/user.entity';
@@ -28,28 +33,31 @@ export class AdminService {
         @InjectRepository(ProcessEntity) private processRepo: Repository<ProcessEntity>,
         @InjectRepository(SupplierEntity) private supplierRepository: Repository<SupplierEntity>,
         @InjectRepository(CustomerEntity) private customerRepository: Repository<CustomerEntity>,
-        @InjectRepository(PartEntity) private partsRepo: Repository<PartEntity>
-    ){}
-    
-    async createRole(roleDto: CreateRole){
+        @InjectRepository(PartEntity) private partsRepo: Repository<PartEntity>,
+        @InjectRepository(ProductionMachinePartEntity) private vendorPartRepo: Repository<ProductionMachinePartEntity>,
+        @InjectRepository(ProductionMachineBoughtoutEntity) private supplierBORepo: Repository<ProductionMachineBoughtoutEntity>,
+        @InjectRepository(OrderConfirmationEntity) private orderConfimationRepo: Repository<OrderConfirmationEntity>
+    ) { }
+
+    async createRole(roleDto: CreateRole) {
         const newRole = await this.roleRepository.create(roleDto)
         await this.roleRepository.save(newRole)
         return newRole
     }
 
-    async getAllRoles(pagination: Pagination){
+    async getAllRoles(pagination: Pagination) {
         let query = this.roleRepository.createQueryBuilder('roles')
-        .select(['roles.role_code', 'roles.role_name', 
-            'roles.screens','roles.id'])
-        .where({is_active : true})
+            .select(['roles.role_code', 'roles.role_name',
+                'roles.screens', 'roles.id'])
+            .where({ is_active: true })
 
-        if(pagination?.page){
+        if (pagination?.page) {
             query = query
-            .limit(pagination.limit)
-            .offset((pagination.page - 1) * pagination.limit)
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
         }
 
-        if(pagination?.search) {
+        if (pagination?.search) {
             query = query.andWhere('LOWER(roles.role_name) LIKE :roleName', { roleName: `%${pagination.search.toLowerCase()}%` })
         }
 
@@ -59,15 +67,15 @@ export class AdminService {
         }
     }
 
-    async getRoleById(id:UUID){
-        const role = await this.roleRepository.find({ select:['id','role_name', 'role_code', 'screens'], where: {is_active: true, id: id} })
-        if(role.length > 0){
+    async getRoleById(id: UUID) {
+        const role = await this.roleRepository.find({ select: ['id', 'role_name', 'role_code', 'screens'], where: { is_active: true, id: id } })
+        if (role.length > 0) {
             return { role: role.at(0) };
         }
         throw new HttpException("No role found", HttpStatus.NOT_FOUND)
     }
 
-    async createNewUser(userDto: CreateUser){
+    async createNewUser(userDto: CreateUser) {
         const newUser = await this.userRepository.create(userDto)
         await this.userRepository.save(newUser)
         return {
@@ -78,18 +86,18 @@ export class AdminService {
         }
     }
 
-    async getAllUsers(pagination: Pagination){
+    async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
-        .select(['user.id', 'user.emp_code', 'user.emp_name'])
-        .where({is_active : true})
+            .select(['user.id', 'user.emp_code', 'user.emp_name'])
+            .where({ is_active: true })
 
-        if(pagination?.page){
+        if (pagination?.page) {
             query = query
-            .limit(pagination.limit)
-            .offset((pagination.page - 1) * pagination.limit)
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
         }
 
-        if(pagination?.search) {
+        if (pagination?.search) {
             query = query.andWhere('LOWER(user.emp_name) LIKE :empName', { empName: `%${pagination.search.toLowerCase()}%` })
         }
 
@@ -99,43 +107,43 @@ export class AdminService {
         }
     }
 
-    async getUserById(id:UUID){
-        const user = await this.userRepository.find({ select:['id','emp_code', 'emp_name', 'role_id'], where: {is_active: true, id: id} })
-        if(user.length > 0){
+    async getUserById(id: UUID) {
+        const user = await this.userRepository.find({ select: ['id', 'emp_code', 'emp_name', 'role_id'], where: { is_active: true, id: id } })
+        if (user.length > 0) {
             return { user: user.at(0) };
         }
         throw new HttpException("No role found", HttpStatus.NOT_FOUND)
     }
 
-    async changePassword(updatePassword:UpdateUserPassword){
-        const user = await (await this.userRepository.find({ where: {id:updatePassword.userId} })).at(0)
+    async changePassword(updatePassword: UpdateUserPassword) {
+        const user = await (await this.userRepository.find({ where: { id: updatePassword.userId } })).at(0)
         user.password = updatePassword.password
         await this.userRepository.update(updatePassword.userId, user)
         return { userId: updatePassword.userId, message: "Password changed successfully" }
     }
 
-    async createProcess(processDto: CreateProcess){
-        const process = await this.processRepository.find({ select:['id','process_name'], where: {is_active: true, process_name: processDto.process_name} })
-        if(process.length > 0){
-            return { message: "Process already exists" }    
+    async createProcess(processDto: CreateProcess) {
+        const process = await this.processRepository.find({ select: ['id', 'process_name'], where: { is_active: true, process_name: processDto.process_name } })
+        if (process.length > 0) {
+            return { message: "Process already exists" }
         }
         const newProcess = await this.processRepository.create(processDto)
         await this.processRepository.save(newProcess)
-        return { message: "Process created successfully" }    
+        return { message: "Process created successfully" }
     }
 
-    async getAllProcess(pagination: Pagination){
+    async getAllProcess(pagination: Pagination) {
         let query = this.processRepository.createQueryBuilder('process')
-        .select(['process.id', 'process.process_name'])
-        .where({is_active : true})
+            .select(['process.id', 'process.process_name'])
+            .where({ is_active: true })
 
-        if(pagination?.page){
+        if (pagination?.page) {
             query = query
-            .limit(pagination.limit)
-            .offset((pagination.page - 1) * pagination.limit)
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
         }
 
-        if(pagination?.search) {
+        if (pagination?.search) {
             query = query.andWhere('LOWER(process.process_name) LIKE :processName', { processName: `%${pagination.search.toLowerCase()}%` })
         }
 
@@ -145,17 +153,17 @@ export class AdminService {
         }
     }
 
-    async createNewVendor(vendorDto: CreateVendor){
-        const existingVendor = await this.vendorRepository.find({ select:['id','vendor_name'], where: {is_active: true, vendor_name: vendorDto.vendor_name} })
+    async createNewVendor(vendorDto: CreateVendor) {
+        const existingVendor = await this.vendorRepository.find({ select: ['id', 'vendor_name'], where: { is_active: true, vendor_name: vendorDto.vendor_name } })
 
-        if(existingVendor.length > 0){
-            return { message: "Vendor already exists" }   
+        if (existingVendor.length > 0) {
+            return { message: "Vendor already exists" }
         }
         const vendor = await this.vendorRepository.save({
             vendor_name: vendorDto.vendor_name,
             vendor_account_no: vendorDto.vendor_account_no,
             vendor_address1: vendorDto.vendor_address1,
-            vendor_address2 : vendorDto.vendor_address2,
+            vendor_address2: vendorDto.vendor_address2,
             vendor_gst: vendorDto.vendor_gst,
             vendor_city: vendorDto.vendor_city,
             vendor_state: vendorDto.vendor_state,
@@ -168,26 +176,27 @@ export class AdminService {
         })
 
         vendorDto.vendor_process_list?.map(async (process) => {
-            var vendorProcessObj = { vendor: vendor, process_id: process.process_id, process_name: process.process_name, vendor_id: vendor.id}
+            var vendorProcessObj = { vendor: vendor, process_id: process.process_id, process_name: process.process_name, vendor_id: vendor.id }
             await this.vendorProcessRepository.save(vendorProcessObj)
         })
 
         return { message: "Vendor created successfully" }
     }
 
-    async updateVendor(vendorDto: CreateVendor){
-        const existingVendor = await this.vendorRepository.findOne({ 
-            where: {is_active: true, vendor_name: vendorDto.vendor_name, } })
+    async updateVendor(vendorDto: CreateVendor) {
+        const existingVendor = await this.vendorRepository.findOne({
+            where: { is_active: true, vendor_name: vendorDto.vendor_name, }
+        })
 
-        if(existingVendor.id != vendorDto.vendor_id){
+        if (existingVendor.id != vendorDto.vendor_id) {
             return { message: "Vendor name already exists" }
         }
-        
-        const vendor = await this.vendorRepository.update({id: vendorDto.vendor_id},{
+
+        const vendor = await this.vendorRepository.update({ id: vendorDto.vendor_id }, {
             vendor_name: vendorDto.vendor_name,
             vendor_account_no: vendorDto.vendor_account_no,
             vendor_address1: vendorDto.vendor_address1,
-            vendor_address2 : vendorDto.vendor_address2,
+            vendor_address2: vendorDto.vendor_address2,
             vendor_gst: vendorDto.vendor_gst,
             vendor_city: vendorDto.vendor_city,
             vendor_state: vendorDto.vendor_state,
@@ -199,27 +208,28 @@ export class AdminService {
             vendor_ifsc: vendorDto.vendor_ifsc
         })
 
-        const vendorProcessList = await this.vendorProcessRepository.find({ 
-            where: {vendor_id: vendorDto.vendor_id } })
+        const vendorProcessList = await this.vendorProcessRepository.find({
+            where: { vendor_id: vendorDto.vendor_id }
+        })
 
         vendorDto.vendor_process_list?.map(async (process) => {
-            if(vendorProcessList.filter((vp:any) => vp.process_id == process.process_id)?.length == 0){
-                var vendorProcessObj = { vendor: existingVendor, process_id: process.process_id, process_name: process.process_name, vendor_id: vendorDto.vendor_id}
+            if (vendorProcessList.filter((vp: any) => vp.process_id == process.process_id)?.length == 0) {
+                var vendorProcessObj = { vendor: existingVendor, process_id: process.process_id, process_name: process.process_name, vendor_id: vendorDto.vendor_id }
                 await this.vendorProcessRepository.save(vendorProcessObj)
             }
         })
 
         vendorProcessList?.map(async (process: any) => {
-            if(vendorDto.vendor_process_list.filter((vpl:any) => process.process_id == vpl.process_id)?.length == 0){
+            if (vendorDto.vendor_process_list.filter((vpl: any) => process.process_id == vpl.process_id)?.length == 0) {
                 await this.vendorProcessRepository.remove(process)
-                const currentProcess = await this.processRepo.findOne({where: {id: process.process_id}})
+                const currentProcess = await this.processRepo.findOne({ where: { id: process.process_id } })
                 const partProcessList = await this.partProcessRepo.createQueryBuilder('part_process')
                     .leftJoinAndSelect('part_process.process', 'process')
                     .leftJoinAndSelect('part_process.part', 'part')
-                    .where('process.id= :process_id', { process_id: process.process_id})
+                    .where('process.id= :process_id', { process_id: process.process_id })
                     .getMany()
-                partProcessList?.map(async (pp:any) => {
-                    await this.partProcessVendorRepo.delete({vendor: existingVendor, part_process: pp })
+                partProcessList?.map(async (pp: any) => {
+                    await this.partProcessVendorRepo.delete({ vendor: existingVendor, part_process: pp })
                     await this.updatePartDays(pp.part.id)
                 })
             }
@@ -244,83 +254,83 @@ export class AdminService {
             .execute()
     }
 
-    async getVendorsList(pagination: Pagination){
-        try{
+    async getVendorsList(pagination: Pagination) {
+        try {
             let id_query = this.vendorRepository.createQueryBuilder('vendor')
-            .select(['vendor.id'])
-       
-            if(pagination?.page){
+                .select(['vendor.id'])
+
+            if (pagination?.page) {
                 id_query = id_query
-                .take(pagination.limit)
-                .skip((pagination.page - 1) * pagination.limit)    
+                    .take(pagination.limit)
+                    .skip((pagination.page - 1) * pagination.limit)
             }
-    
-            if(pagination?.search){
+
+            if (pagination?.search) {
                 id_query = id_query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
             }
-        const ids = await id_query.getMany()
-        const count = await id_query.getCount()
+            const ids = await id_query.getMany()
+            const count = await id_query.getCount()
 
-        let query = this.vendorRepository.createQueryBuilder('vendor')
-            .innerJoinAndSelect('vendor.process_list','process')
-            .select(['vendor.id','vendor.vendor_name',
-            'vendor.vendor_address1','vendor.vendor_address2',
-            'vendor.vendor_gst', 'vendor.vendor_account_no','vendor.vendor_bank_name',
-            'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
-            'vendor.vendor_mobile_no1','vendor.vendor_mobile_no2',
-            'vendor.vendor_location','process.process_id','process.process_name'])
+            let query = this.vendorRepository.createQueryBuilder('vendor')
+                .innerJoinAndSelect('vendor.process_list', 'process')
+                .select(['vendor.id', 'vendor.vendor_name',
+                    'vendor.vendor_address1', 'vendor.vendor_address2',
+                    'vendor.vendor_gst', 'vendor.vendor_account_no', 'vendor.vendor_bank_name',
+                    'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
+                    'vendor.vendor_mobile_no1', 'vendor.vendor_mobile_no2',
+                    'vendor.vendor_location', 'process.process_id', 'process.process_name'])
 
-            if(ids.length > 0){
+            if (ids.length > 0) {
                 query = query.where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
             }
-        
-        const list = await query.getMany()
-        return { list, count }
-        }catch(err){
+
+            const list = await query.getMany()
+            return { list, count }
+        } catch (err) {
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
                 error: err.message,
-              }, HttpStatus.FORBIDDEN, {
+            }, HttpStatus.FORBIDDEN, {
                 cause: err.message
-              }); 
+            });
         }
     }
 
-    async getVendorById(id:UUID){
-        const vendor = await this.vendorRepository.findOne({ where: {is_active: true, id: id} })
-        if(vendor){
-            const vendorProcess = await this.vendorProcessRepository.find({ where: {vendor_id: vendor.id }})
+    async getVendorById(id: UUID) {
+        const vendor = await this.vendorRepository.findOne({ where: { is_active: true, id: id } })
+        if (vendor) {
+            const vendorProcess = await this.vendorProcessRepository.find({ where: { vendor_id: vendor.id } })
             return { vendor: vendor, vendorProcess };
         }
         throw new HttpException("No supplier found", HttpStatus.NOT_FOUND)
     }
 
-    async createNewSupplier(supplierDto: CreateSupplier){
-        const supplier = await this.supplierRepository.find({ select:['id','supplier_name'], where: {is_active: true, supplier_name: supplierDto.supplier_name} })
-        if(supplier.length > 0){
-            return { message: "Supplier already exists" }    
+    async createNewSupplier(supplierDto: CreateSupplier) {
+        const supplier = await this.supplierRepository.find({ select: ['id', 'supplier_name'], where: { is_active: true, supplier_name: supplierDto.supplier_name } })
+        if (supplier.length > 0) {
+            return { message: "Supplier already exists" }
         }
         await this.supplierRepository.save(supplierDto)
         return { message: "Supplier created successfully" }
     }
 
-    async getSuppliers(input: { page?:number, limit?:number, search?:string }){
+    async getSuppliers(input: { page?: number, limit?: number, search?: string }) {
         let query = this.supplierRepository.createQueryBuilder('suppliers')
-        .select(['suppliers.id','suppliers.supplier_name', 'suppliers.supplier_address1', 
-            'suppliers.supplier_address2','suppliers.supplier_mobile_no1',
-            'suppliers.supplier_mobile_no2','suppliers.supplier_account_no', 
-            'suppliers.supplier_bank_name', 'suppliers.supplier_ifsc',  
-            'suppliers.supplier_location', 'suppliers.supplier_city',
-            'suppliers.supplier_state', 'suppliers.supplier_pincode'])
-        .where({is_active : true})
+            .select(['suppliers.id', 'suppliers.supplier_name', 'suppliers.supplier_address1',
+                'suppliers.supplier_address2', 'suppliers.supplier_mobile_no1',
+                'suppliers.supplier_mobile_no2', 'suppliers.supplier_account_no',
+                'suppliers.supplier_bank_name', 'suppliers.supplier_ifsc',
+                'suppliers.supplier_location', 'suppliers.supplier_city',
+                'suppliers.supplier_state', 'suppliers.supplier_pincode'])
+            .where({ is_active: true })
 
-        if(input?.page){
+        if (input?.page) {
             query = query
-            .limit(input.limit)
-            .offset((input.page - 1) * input.limit)
+                .limit(input.limit)
+                .offset((input.page - 1) * input.limit)
         }
 
-        if(input?.search) {
+        if (input?.search) {
             query = query.andWhere('LOWER(suppliers.supplier_name) LIKE :supplierName', { supplierName: `%${input.search.toLowerCase()}%` })
         }
 
@@ -330,19 +340,20 @@ export class AdminService {
         }
     }
 
-    async updateSupplier(supplierDto: CreateSupplier){
-        const existingSupplier = await this.supplierRepository.findOne({ 
-            where: {is_active: true, supplier_name: supplierDto.supplier_name, } })
+    async updateSupplier(supplierDto: CreateSupplier) {
+        const existingSupplier = await this.supplierRepository.findOne({
+            where: { is_active: true, supplier_name: supplierDto.supplier_name, }
+        })
 
-        if(existingSupplier.id != supplierDto.supplier_id){
+        if (existingSupplier.id != supplierDto.supplier_id) {
             return { message: "Supplier name already exists" }
         }
-        
-        await this.supplierRepository.update({id: supplierDto.supplier_id},{
+
+        await this.supplierRepository.update({ id: supplierDto.supplier_id }, {
             supplier_name: supplierDto.supplier_name,
             supplier_account_no: supplierDto.supplier_account_no,
             supplier_address1: supplierDto.supplier_address1,
-            supplier_address2 : supplierDto.supplier_address2,
+            supplier_address2: supplierDto.supplier_address2,
             supplier_city: supplierDto.supplier_city,
             supplier_state: supplierDto.supplier_state,
             supplier_pincode: supplierDto.supplier_pincode,
@@ -356,34 +367,34 @@ export class AdminService {
         return { message: "Supplier updated successfully" }
     }
 
-    async getSupplierById(id:UUID){
-        const supplier = await this.supplierRepository.findOne({ where: {is_active: true, id: id} })
-        if(supplier){
+    async getSupplierById(id: UUID) {
+        const supplier = await this.supplierRepository.findOne({ where: { is_active: true, id: id } })
+        if (supplier) {
             return { supplier };
         }
         throw new HttpException("No supplier found", HttpStatus.NOT_FOUND)
     }
 
-    async createNewCustomer(customerDto: CreateCustomer){
-        const customer = await this.customerRepository.find({ select:['id','customer_name'], where: {is_active: true, customer_name: customerDto.customer_name} })
-        if(customer.length > 0){
-            return { message: "Customer already exists" }    
+    async createNewCustomer(customerDto: CreateCustomer) {
+        const customer = await this.customerRepository.find({ select: ['id', 'customer_name'], where: { is_active: true, customer_name: customerDto.customer_name } })
+        if (customer.length > 0) {
+            return { message: "Customer already exists" }
         }
         await this.customerRepository.save(customerDto)
         return { message: "Customer created successfully" }
     }
 
-    async getCustomers(input: { page?:number, limit?:number, search?:string }){
+    async getCustomers(input: { page?: number, limit?: number, search?: string }) {
         let query = this.customerRepository.createQueryBuilder('customers')
-        .where({is_active : true})
+            .where({ is_active: true })
 
-        if(input?.page){
+        if (input?.page) {
             query = query
-            .limit(input.limit)
-            .offset((input.page - 1) * input.limit)
+                .limit(input.limit)
+                .offset((input.page - 1) * input.limit)
         }
 
-        if(input?.search) {
+        if (input?.search) {
             query = query.andWhere('LOWER(customers.customer_name) LIKE :customerName', { customerName: `%${input.search.toLowerCase()}%` })
         }
 
@@ -393,27 +404,28 @@ export class AdminService {
         }
     }
 
-    async getCustomerById(id:UUID){
-        const customer = await this.customerRepository.findOne({ where: {is_active: true, id: id} })
-        if(customer){
+    async getCustomerById(id: UUID) {
+        const customer = await this.customerRepository.findOne({ where: { is_active: true, id: id } })
+        if (customer) {
             return { customer };
         }
         throw new HttpException("No customer found", HttpStatus.NOT_FOUND)
     }
 
-    async updateCustomer(customerDto: CreateCustomer){
-        const existingCustomer = await this.customerRepository.findOne({ 
-            where: {is_active: true, customer_name: customerDto.customer_name, } })
+    async updateCustomer(customerDto: CreateCustomer) {
+        const existingCustomer = await this.customerRepository.findOne({
+            where: { is_active: true, customer_name: customerDto.customer_name, }
+        })
 
-        if(existingCustomer.id != customerDto.customer_id){
+        if (existingCustomer.id != customerDto.customer_id) {
             return { message: "Customer name already exists" }
         }
-        
-        await this.customerRepository.update({id: customerDto.customer_id},{
+
+        await this.customerRepository.update({ id: customerDto.customer_id }, {
             customer_name: customerDto.customer_name,
             customer_account_no: customerDto.customer_account_no,
             customer_address1: customerDto.customer_address1,
-            customer_address2 : customerDto.customer_address2,
+            customer_address2: customerDto.customer_address2,
             customer_city: customerDto.customer_city,
             customer_state: customerDto.customer_state,
             customer_pincode: customerDto.customer_pincode,
@@ -427,5 +439,60 @@ export class AdminService {
         })
 
         return { message: "Customer updated successfully" }
+    }
+
+    async getVendorHistory(pagination: Pagination) {
+        let query = this.vendorPartRepo.createQueryBuilder('vp')
+            .select(['vp.id', 'order.machine_name', 'vp.part_name',
+                'vp.process_name', 'quotation.quotation_no', 'vp.status', 'order.status'])
+            .innerJoin('vp.order', 'order')
+            .innerJoin('order.quotation', 'quotation')
+            .where('vp.vendor_id=:id', { id: pagination.search })
+            .orderBy('vp.updated_at', 'DESC')
+        if (pagination?.page) {
+            query = query
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return { list, count };
+    }
+
+    async getSupplierHistory(pagination: Pagination) {
+        let query = this.supplierBORepo.createQueryBuilder('sbo')
+            .select(['sbo.id', 'order.machine_name', 'sbo.bought_out_name',
+                'quotation.quotation_no', 'sbo.status', 'order.status'])
+            .innerJoin('sbo.order', 'order')
+            .innerJoin('order.quotation', 'quotation')
+            .where('sbo.supplier_id=:id', { id: pagination.search })
+        if (pagination?.page) {
+            query = query
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return { list, count };
+    }
+
+    async getCustomerHistory(pagination: Pagination) {
+        let query = this.orderConfimationRepo.createQueryBuilder('order')
+            .select(['customer.customer_name', 'quotation.quotation_no',
+                'order.machine_name', 'order.status', 'quotation.approved_cost',
+                'order.created_at'
+            ])
+            .innerJoin('order.quotation', 'quotation')
+            .innerJoin('order.customer', 'customer')
+            .where('customer.id=:id', { id: pagination.search })
+            .orderBy('order.created_at', 'DESC')
+        if (pagination?.page) {
+            query = query
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return { list, count };
     }
 }

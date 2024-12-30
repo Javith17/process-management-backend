@@ -105,9 +105,38 @@ export class MoveProductionMachinePartToVendorDto {
     created_by: UUID;
 }
 
+export class CloseOrderDto {
+    @IsString()
+    order_id: UUID;
+
+    @IsString()
+    remarks: string;
+
+    @IsString()
+    created_by: UUID;
+}
+
 export class DeliverProductionMachinePartDto {
     @IsString()
     production_part_id: UUID;
+
+    @IsString()
+    production_boughtout_id: UUID;
+
+    @IsString()
+    order_id: UUID;
+
+    @IsString()
+    part_name: string;
+
+    @IsString()
+    bought_out_name: string;
+
+    @IsNumber()
+    delivered_qty: number;
+
+    @IsNumber()
+    assembly_qty: number;
 
     @IsString()
     remarks: string;

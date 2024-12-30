@@ -121,4 +121,19 @@ export class AdminController {
     updateCustomer(@Body() createCustomer: CreateCustomer){
         return this.adminService.updateCustomer(createCustomer)
     }
+
+    @Get('/vendorsHistory')    
+    getVendorsHistory(@Query() pagination: Pagination){
+        return this.adminService.getVendorHistory(pagination)
+    }
+
+    @Get('/suppliersHistory')    
+    getSuppliersHistory(@Query() pagination: Pagination){
+        return this.adminService.getSupplierHistory(pagination)
+    }
+
+    @Get('/customersHistory')
+    getCUstomersHistory(@Query() pagination: Pagination){
+        return this.adminService.getCustomerHistory(pagination)
+    }
 }

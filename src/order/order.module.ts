@@ -27,7 +27,7 @@ import { OrderService } from "./order.service";
 @Module({
     imports: [TypeOrmModule.forFeature([
       UserEntity, OrderConfirmationEntity, SubAssemblyEntity, ProductionMachinePartEntity,
-      PartProcessEntity, 
+      PartProcessEntity, PartEntity, BoughtOutEntity,
       BoughtOutSuppliertEntity, ProductionPartRescheduleEntity,
       ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
       VendorEntity, MachineEntity, CustomerEntity, OrderConfirmationEntity])],

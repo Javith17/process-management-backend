@@ -13,6 +13,7 @@ import { PartEntity } from 'src/model/part.entity';
 import { PartProcessEntity } from 'src/model/part_process.entity';
 import { PartProcessVendorEntity } from 'src/model/part_process_vendor.entity';
 import { ProductionMachineBoughtoutEntity } from 'src/model/production_machine_boughtout.entity';
+import { ProductionMachineHistoryEntity } from 'src/model/production_machine_history.entity';
 import { ProductionMachinePartEntity } from 'src/model/production_machine_part.entity';
 import { SectionAssemblyEntity } from 'src/model/section_assembly.entity';
 import { SupplierEntity } from 'src/model/supplier.entity';
@@ -41,7 +42,8 @@ export class QuotationService {
         @InjectRepository(SupplierEntity) private supplierRepo: Repository<SupplierEntity>,
         @InjectRepository(BoughtOutEntity) private boughtoutRepo: Repository<BoughtOutEntity>,
         @InjectRepository(SupplierQuotationEntity) private supplierQuotationRepo: Repository<SupplierQuotationEntity>,
-        @InjectRepository(BoughtOutSuppliertEntity) private boughoutSupplierRepo: Repository<BoughtOutSuppliertEntity>
+        @InjectRepository(BoughtOutSuppliertEntity) private boughoutSupplierRepo: Repository<BoughtOutSuppliertEntity>,
+        @InjectRepository(ProductionMachineHistoryEntity) private historyRepo: Repository<ProductionMachineHistoryEntity>
     ) { }
 
     async createMachineQuotation(machineQuotation: CreateMachineQuotationDto) {
@@ -357,6 +359,7 @@ export class QuotationService {
                         await this.addOrderConfirmation(approvedQuotation)
                     }
                 }
+
                 return { message: `Quotation ${approveDto.status} successfully` }
             } else {
                 return { message: 'Unable to update quotation status' }
@@ -746,6 +749,18 @@ export class QuotationService {
                     order: orderConfirmation
                 })
             })
+        })
+
+        this.historyRepo.save({
+            parent_id: orderConfirmation.id,
+            type: 'Order',
+            type_id: orderConfirmation.id,
+            type_name: orderConfirmation.machine_name,
+            data: { action: 'Approved Order' },
+            remarks: '',
+            from_status: '',
+            to_status: 'Approved order',
+            order: orderConfirmation
         })
     }
 }
