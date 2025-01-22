@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
+import { BoughtOutEntity } from 'src/model/bought_out.entity';
+import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
 import { CustomerEntity } from 'src/model/customer.entity';
 import { MachineEntity } from 'src/model/machine.entity';
 import { MachineQuotationEntity } from 'src/model/machine_quotation.entity';
@@ -254,23 +256,74 @@ export class AdminService {
             .execute()
     }
 
+    // async getVendorsList(pagination: Pagination) {
+    //     try {
+    //         if (pagination.type == 'vendor') {
+    //             let id_query = this.vendorRepository.createQueryBuilder('vendor')
+    //                 .select(['vendor.id'])
+
+    //             if (pagination?.page) {
+    //                 id_query = id_query
+    //                     .take(pagination.limit)
+    //                     .skip((pagination.page - 1) * pagination.limit)
+    //             }
+
+    //             if (pagination?.search) {
+    //                 id_query = id_query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
+    //             }
+    //             const ids = await id_query.getMany()
+    //             const count = await id_query.getCount()
+
+    //             let query = this.vendorRepository.createQueryBuilder('vendor')
+    //                 .innerJoinAndSelect('vendor.process_list', 'process')
+    //                 .select(['vendor.id', 'vendor.vendor_name',
+    //                     'vendor.vendor_address1', 'vendor.vendor_address2',
+    //                     'vendor.vendor_gst', 'vendor.vendor_account_no', 'vendor.vendor_bank_name',
+    //                     'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
+    //                     'vendor.vendor_mobile_no1', 'vendor.vendor_mobile_no2',
+    //                     'vendor.vendor_location', 'process.process_id', 'process.process_name'])
+
+    //             if (ids.length > 0) {
+    //                 query = query.where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+    //             }
+
+    //             const list = await query.getMany()
+    //             return { list, count }
+    //         } else {
+    //             let query = this.vendorRepository.createQueryBuilder('vendor')
+    //                 .innerJoinAndSelect('vendor.process_list', 'process')
+    //                 .select(['vendor.id', 'vendor.vendor_name',
+    //                     'vendor.vendor_address1', 'vendor.vendor_address2',
+    //                     'vendor.vendor_gst', 'vendor.vendor_account_no', 'vendor.vendor_bank_name',
+    //                     'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
+    //                     'vendor.vendor_mobile_no1', 'vendor.vendor_mobile_no2',
+    //                     'vendor.vendor_location', 'process.process_id', 'process.process_name'])
+
+    //                     if (pagination?.page) {
+    //                         query = query
+    //                             .take(pagination.limit)
+    //                             .skip((pagination.page - 1) * pagination.limit)
+    //                     }
+
+    //                     if (pagination?.search) {
+    //                         query = query.andWhere('LOWER(process.process_name) LIKE :processName', { processName: `%${pagination.search.toLowerCase()}%` })
+    //                     }
+    //             const [list, count] = await query.getManyAndCount()
+    //             return { list, count }
+    //         }
+
+    //     } catch (err) {
+    //         throw new HttpException({
+    //             status: HttpStatus.FORBIDDEN,
+    //             error: err.message,
+    //         }, HttpStatus.FORBIDDEN, {
+    //             cause: err.message
+    //         });
+    //     }
+    // }
+
     async getVendorsList(pagination: Pagination) {
         try {
-            let id_query = this.vendorRepository.createQueryBuilder('vendor')
-                .select(['vendor.id'])
-
-            if (pagination?.page) {
-                id_query = id_query
-                    .take(pagination.limit)
-                    .skip((pagination.page - 1) * pagination.limit)
-            }
-
-            if (pagination?.search) {
-                id_query = id_query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
-            }
-            const ids = await id_query.getMany()
-            const count = await id_query.getCount()
-
             let query = this.vendorRepository.createQueryBuilder('vendor')
                 .innerJoinAndSelect('vendor.process_list', 'process')
                 .select(['vendor.id', 'vendor.vendor_name',
@@ -278,14 +331,21 @@ export class AdminService {
                     'vendor.vendor_gst', 'vendor.vendor_account_no', 'vendor.vendor_bank_name',
                     'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
                     'vendor.vendor_mobile_no1', 'vendor.vendor_mobile_no2',
-                    'vendor.vendor_location', 'process.process_id', 'process.process_name'])
+                    'vendor.vendor_location'])
 
-            if (ids.length > 0) {
-                query = query.where("vendor.id IN (:...ids)", { ids: ids.map((id) => id.id) })
+            if (pagination?.page) {
+                query = query
+                    .take(pagination.limit)
+                    .skip((pagination.page - 1) * pagination.limit)
             }
 
-            const list = await query.getMany()
+            if (pagination?.search) {
+                query = query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
+                query = query.orWhere('LOWER(process.process_name) LIKE :processName', { processName: `%${pagination.search.toLowerCase()}%` })
+            }
+            const [list, count] = await query.getManyAndCount()
             return { list, count }
+
         } catch (err) {
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
@@ -316,6 +376,8 @@ export class AdminService {
 
     async getSuppliers(input: { page?: number, limit?: number, search?: string }) {
         let query = this.supplierRepository.createQueryBuilder('suppliers')
+            .leftJoin(BoughtOutSuppliertEntity, 'boughtout_supplier', 'boughtout_supplier.supplier_id = suppliers.id ')
+            .leftJoin(BoughtOutEntity, 'boughtout', 'boughtout.id = boughtout_supplier.bought_out_id')
             .select(['suppliers.id', 'suppliers.supplier_name', 'suppliers.supplier_address1',
                 'suppliers.supplier_address2', 'suppliers.supplier_mobile_no1',
                 'suppliers.supplier_mobile_no2', 'suppliers.supplier_account_no',
@@ -332,6 +394,7 @@ export class AdminService {
 
         if (input?.search) {
             query = query.andWhere('LOWER(suppliers.supplier_name) LIKE :supplierName', { supplierName: `%${input.search.toLowerCase()}%` })
+            query = query.orWhere('LOWER(boughtout.bought_out_name) LIKE :boughtoutName', { boughtoutName: `%${input.search.toLowerCase()}%` })
         }
 
         const [list, count] = await query.getManyAndCount()
@@ -417,8 +480,10 @@ export class AdminService {
             where: { is_active: true, customer_name: customerDto.customer_name, }
         })
 
-        if (existingCustomer.id != customerDto.customer_id) {
-            return { message: "Customer name already exists" }
+        if (existingCustomer != null) {
+            if (existingCustomer?.id != customerDto.customer_id) {
+                return { message: "Customer name already exists" }
+            }
         }
 
         await this.customerRepository.update({ id: customerDto.customer_id }, {

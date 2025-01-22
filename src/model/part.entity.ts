@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { PartProcessEntity } from "./part_process.entity";
+import { PartMachineEntity } from "./part_machine.entity";
 
 @Entity('parts')
 export abstract class PartEntity extends BaseEntity{
@@ -13,8 +14,14 @@ export abstract class PartEntity extends BaseEntity{
     @Column({nullable: true})
     available_aty: number;
 
-    @Column({nullable: true})
-    part_category: string;
+    @Column({nullable: true, default: false})
+    is_machine: boolean;
+    
+    @Column({nullable: true, default: false})
+    is_spare: boolean;
+
+    @Column({nullable: true, default: false})
+    is_spm: boolean;
 
     @OneToMany(()=> PartProcessEntity, (partProcess)=>partProcess.part)
     part_process_list: PartProcessEntity[];

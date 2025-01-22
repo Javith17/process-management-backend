@@ -20,12 +20,15 @@ import { SectionAssemblyDetailEntity } from "src/model/section_assembly_detail.e
 import { MachineSubAssemblyEntity } from "src/model/machine_sub_assembly.entity";
 import { SubAssemblyMachineEntity } from "src/model/sub_assembly_machines.entity";
 import { AttachmentEntity } from "src/model/attachment.entity";
+import { PartMachineEntity } from "src/model/part_machine.entity";
+import { BoughtoutMachineEntity } from "src/model/bought_out_machine.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([PartEntity, PartProcessEntity, PartProcessVendorEntity, 
         VendorEntity, ProcessEntity, BoughtOutEntity, BoughtOutSuppliertEntity, SupplierEntity,
         MachineEntity, SubAssemblyEntity, SubAssemblyDetailEntity, MainAssemblyEntity, MainAssemblyDetailEntity,
-        SectionAssemblyEntity, SectionAssemblyDetailEntity, MachineSubAssemblyEntity, SubAssemblyMachineEntity, AttachmentEntity])],
+        SectionAssemblyEntity, SectionAssemblyDetailEntity, MachineSubAssemblyEntity, SubAssemblyMachineEntity, AttachmentEntity,
+        PartMachineEntity, BoughtoutMachineEntity])],
     controllers: [MachineController],
     providers: [MachineService]
   })

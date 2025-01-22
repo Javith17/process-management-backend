@@ -4,7 +4,7 @@ import { UUID } from 'crypto';
 import { Response } from 'express';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, FileDto, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
+import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
 import { CheckNameDto, Pagination, RemoveAttachmentDto } from 'src/dto/pagination.dto';
 import { MachineService } from './machine.service';
 import multer, { diskStorage } from 'multer';
@@ -28,6 +28,11 @@ export class MachineController {
         return this.machineService.getPartsList(pagination)
     }
 
+    @Post('/partsListByMachine')
+    getPartsListByMachine(@Body() partsByMachineDto: PartsByMachines){
+        return this.machineService.getPartsListByMachine(partsByMachineDto)
+    }
+
     @Get('/partsInStoresList')
     getPartsInStoresList(@Query() pagination: Pagination){
         return this.machineService.getPartsListInStore(pagination)
@@ -48,9 +53,19 @@ export class MachineController {
         return this.machineService.getBoughtOutList(pagination)
     }
 
+    @Post('/boughtOutListByMachine')
+    getBoughtOutListByMachine(@Body() boughtoutByMachineDto: PartsByMachines){
+        return this.machineService.getBoughtoutListByMachine(boughtoutByMachineDto)
+    }
+
     @Get('/boughtouts/:id')
     getBoughtoutDetail(@Param('id') id: UUID){
         return this.machineService.getBoughtoutDetail(id)
+    }
+
+    @Get('/supplierBoughtouts/:supplier_id')
+    getSupplierBoughtouts(@Param('supplier_id') supplier_id: UUID){
+        return this.machineService.getSupplierBoughtouts(supplier_id)
     }
 
     @Post('/createSubAssembly')

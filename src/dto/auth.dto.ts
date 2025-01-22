@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class SignIn{
     @IsString()
@@ -11,9 +11,9 @@ export class SignIn{
 }
 
 export class AcceptByVendorDto{
-    @IsString()
+    @IsArray()
     @IsNotEmpty()
-    id: string;
+    id: string[];
 
     @IsString()
     @IsNotEmpty()

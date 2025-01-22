@@ -17,6 +17,18 @@ export class CreatePart {
 
     @IsArray()
     part_process_list: CreatePartProcess[]
+
+    @IsArray()
+    machines: string[]
+
+    @IsBoolean()
+    is_machine: boolean;
+
+    @IsBoolean()
+    is_spare: boolean;
+
+    @IsBoolean()
+    is_spm: boolean;
 }
 
 export class CreatePartProcess {    
@@ -54,6 +66,18 @@ export class CreateBoughtOut {
 
     @IsArray()
     bought_out_supplier_list: CreateBoughtOutSupplier[]
+
+    @IsBoolean()
+    is_machine: boolean;
+
+    @IsBoolean()
+    is_spare: boolean;
+
+    @IsBoolean()
+    is_spm: boolean;
+
+    @IsArray()
+    machines: string[]
 }
 
 export class CreateBoughtOutSupplier {
@@ -242,6 +266,9 @@ export class UpdateAssemblyDetail {
     assembly_udpate_type: string;
 
     @IsString()
+    assembly_type_name: UUID;
+
+    @IsString()
     id: UUID;
 
     @IsString()
@@ -249,6 +276,9 @@ export class UpdateAssemblyDetail {
 
     @IsString()
     update_type;
+
+    @IsArray()
+    machines: string[];
 }
 
 export class FileDto {
@@ -297,7 +327,20 @@ export class UpdateBoughtoutDto {
 
     @IsString()
     delivery_time: string;
+
+    @IsBoolean()
+    is_machine: boolean;
+
+    @IsBoolean()
+    is_spm: boolean;
+
+    @IsBoolean()
+    is_spare: boolean;
+
+    @IsArray()
+    machines: string[]
 }
+
 export class UpdatePartDto {
     @IsString()
     part_id: UUID;
@@ -328,6 +371,21 @@ export class UpdatePartDto {
 
     @IsString()
     vendor_id: UUID;
+
+    @IsString()
+    part_name: UUID;
+
+    @IsBoolean()
+    is_machine: boolean;
+
+    @IsBoolean()
+    is_spare: boolean;
+
+    @IsBoolean()
+    is_spm: boolean;
+
+    @IsArray()
+    machines: string[]
 }
 
 export class VendorAttachmentDto {
@@ -336,4 +394,9 @@ export class VendorAttachmentDto {
 
     @IsString()
     part_id: UUID;
+}
+
+export class PartsByMachines {
+    @IsArray()
+    machines: string[]
 }

@@ -10,6 +10,12 @@ export class Pagination{
 
     @IsString()
     search: string;
+
+    @IsString()
+    type: string;
+
+    @IsString()
+    type_id: string;
 }
 
 export class CheckNameDto {

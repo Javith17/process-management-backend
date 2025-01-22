@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
-import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, FileDetailsDto, FileDto, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
+import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, FileDetailsDto, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
 import { CheckNameDto, Pagination, RemoveAttachmentDto } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -26,6 +26,8 @@ import { SubAssemblyMachineEntity } from 'src/model/sub_assembly_machines.entity
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 import { AttachmentEntity } from 'src/model/attachment.entity';
 import { join } from 'path';
+import { PartMachineEntity } from 'src/model/part_machine.entity';
+import { BoughtoutMachineEntity } from 'src/model/bought_out_machine.entity';
 
 @Injectable()
 export class MachineService {
@@ -47,7 +49,9 @@ export class MachineService {
         @InjectRepository(SectionAssemblyDetailEntity) private sectionAssemblyDetailRepository: Repository<SectionAssemblyDetailEntity>,
         @InjectRepository(MachineSubAssemblyEntity) private machineSubAssemblyRepository: Repository<MachineSubAssemblyEntity>,
         @InjectRepository(SubAssemblyMachineEntity) private subAssemblyMachineRepository: Repository<SubAssemblyMachineEntity>,
-        @InjectRepository(AttachmentEntity) private attachmentRepository: Repository<AttachmentEntity>
+        @InjectRepository(AttachmentEntity) private attachmentRepository: Repository<AttachmentEntity>,
+        @InjectRepository(PartMachineEntity) private partMachineRepo: Repository<PartMachineEntity>,
+        @InjectRepository(BoughtoutMachineEntity) private boughtOutMachineRepo: Repository<BoughtoutMachineEntity>
     ) { }
 
 
@@ -61,10 +65,21 @@ export class MachineService {
             part_name: createPartDto.part_name,
             minimum_stock_qty: createPartDto.minimum_stock_qty,
             available_aty: createPartDto.available_qty,
-            part_category: createPartDto.part_category
+            part_category: createPartDto.part_category,
+            is_machine: createPartDto.is_machine,
+            is_spare: createPartDto.is_spare,
+            is_spm: createPartDto.is_spm
         })
 
         let partDays = 0
+
+        createPartDto.machines?.map(async (machine:any) => {
+            const machineObj = await this.machineRepository.findOne({where: {id: machine}})
+            await this.partMachineRepo.save({
+                part: partObj,
+                machine: machineObj
+            })            
+        })
 
         createPartDto.part_process_list?.map(async (partProcessDto) => {
             const processObj = await this.processRepository.findOneBy({ id: partProcessDto.process_id })
@@ -106,6 +121,9 @@ export class MachineService {
                 'parts.part_name',
                 'parts.minimum_stock_qty',
                 'parts.available_aty',
+                'parts.is_machine',
+                'parts.is_spm',
+                'parts.is_spare',
                 'parts.days',
                 'part_process.id',
                 'part_process.process_cost',
@@ -125,7 +143,13 @@ export class MachineService {
             .andWhere('parent_type=:type', { type: 'part' })
         const attachments = await attachments_query.getMany()
 
-        return { part_detail: await query.getOne(), attachments }
+        let machines_query = await this.partMachineRepo.createQueryBuilder('part_machine')
+            .leftJoinAndSelect('part_machine.machine', 'machine')
+            .select(['part_machine.id','machine.id', 'machine.machine_name'])
+            .where('part_machine.part_id::VARCHAR=:part_id', { part_id: id })
+        const machines = await machines_query.getMany()
+
+        return { part_detail: await query.getOne(), attachments, machines }
     }
 
     async getPartsList(pagination: Pagination) {
@@ -183,6 +207,32 @@ export class MachineService {
         }
     }
 
+    async getPartsListByMachine(partsByMachineDto: PartsByMachines) {
+        try{
+        let query = await this.partRepository.createQueryBuilder('parts')
+            .leftJoin(PartMachineEntity, 'part_machine', 'part_machine.part_id = parts.id')
+            .select([
+                'parts.id',
+                'parts.part_name',
+                'parts.minimum_stock_qty',
+                'parts.available_aty',
+                'parts.days'
+            ])
+            .where('part_machine.machine_id IN (:...ids)', { ids: partsByMachineDto.machines })
+            
+
+        const list = await query.getMany()
+        return { list  }
+        }catch(err){
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err.message,
+              }, HttpStatus.FORBIDDEN, {
+                cause: err.message
+              }); 
+        }
+    }
+
     async getPartsListInStore(pagination: Pagination) {
         try{
             let query = this.partRepository.createQueryBuilder('parts')
@@ -225,12 +275,23 @@ export class MachineService {
         }
         const boughtOutObj = await this.boughtOutRepository.save({
             bought_out_name: createBoughtOutDto.bought_out_name,
-            bought_out_category: createBoughtOutDto.bought_out_category
+            bought_out_category: createBoughtOutDto.bought_out_category,
+            is_machine: createBoughtOutDto.is_machine,
+            is_spare: createBoughtOutDto.is_spare,
+            is_spm: createBoughtOutDto.is_spm
         })
 
-        let boughtoutDays : number[] = createBoughtOutDto.bought_out_supplier_list.map((sup:any) => Number(sup.delivery_time))
+        createBoughtOutDto?.machines?.map(async (machine:any) => {
+            const machineObj = await this.machineRepository.findOne({where:{id: machine}})
+            await this.boughtOutMachineRepo.save({
+                bought_out: boughtOutObj,
+                machine: machineObj
+            })
+        })
 
-        createBoughtOutDto.bought_out_supplier_list?.map(async (supplierDto) => {
+        let boughtoutDays : number[] = createBoughtOutDto?.bought_out_supplier_list?.map((sup:any) => Number(sup.delivery_time))
+
+        createBoughtOutDto?.bought_out_supplier_list?.map(async (supplierDto) => {
             const supplier = await this.supplierRepository.findOne({ where: { id: supplierDto.supplier_id } })
             
             await this.boughtOutSupplierRepository.save({
@@ -243,11 +304,20 @@ export class MachineService {
 
         await this.boughtOutRepository.createQueryBuilder()
         .update(BoughtOutEntity)
-        .set({ days: Math.min(...boughtoutDays) })
+        .set({ days: boughtoutDays.length == 0 ? 0 : Math.min(...boughtoutDays) })
         .where("id=:id", { id: boughtOutObj.id })
         .execute()
 
         return { message: "Bought Out created successfully", id: boughtOutObj.id }
+    }
+
+    async getSupplierBoughtouts(id: string) {
+        let result = await this.boughtOutSupplierRepository.createQueryBuilder('bs')
+            .leftJoinAndSelect('bs.bought_out', 'bo')
+            .select(['bs.id', 'bs.cost', 'bs.delivery_time', 'bo.bought_out_name'])
+            .where('bs.supplier_id=:id', {id})
+            .getMany()
+        return { supplierBoughtouts: result }
     }
 
     async getBoughtoutDetail(id: string) {
@@ -259,6 +329,9 @@ export class MachineService {
                 'boughtout.bought_out_name',
                 'boughtout.bought_out_category',
                 'boughtout.days',
+                'boughtout.is_machine',
+                'boughtout.is_spm',
+                'boughtout.is_spare',
                 'bought_out_suppliers.id',
                 'bought_out_suppliers.cost',
                 'bought_out_suppliers.delivery_time',
@@ -272,11 +345,40 @@ export class MachineService {
             .andWhere('parent_type=:type', { type: 'boughtout' })
         const attachments = await attachments_query.getMany()
 
-        return { boughtout_detail: await query.getOne(), attachments }
+        let machines_query = await this.boughtOutMachineRepo.createQueryBuilder('bought_out_machine')
+            .leftJoinAndSelect('bought_out_machine.machine', 'machine')
+            .select(['bought_out_machine.id','machine.id', 'machine.machine_name'])
+            .where('bought_out_machine.bought_out_id::VARCHAR=:bought_out_id', { bought_out_id: id })
+        const machines = await machines_query.getMany()
+
+        return { boughtout_detail: await query.getOne(), attachments, machines }
     }
 
     async getBoughtOutList(pagination: Pagination) {
-        let query = await this.boughtOutRepository.createQueryBuilder('bought_out')
+        if(pagination.type == 'map'){
+            let query = await this.boughtOutRepository.createQueryBuilder('bought_out')
+            .leftJoinAndSelect('bought_out.bought_out_suppliers', 'bought_out_supplier')
+            .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
+            .select([
+                'bought_out.id',
+                'bought_out.bought_out_name'
+            ])
+
+            if (pagination?.page) {
+                query = query
+                    .limit(pagination.limit)
+                    .offset((pagination.page - 1) * pagination.limit)
+            }
+
+            if (pagination?.search) {
+                query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
+                query = query.andWhere('supplier.id NOT IN (:...id)', { id: [pagination?.type_id]}).orWhere('supplier.id IS NULL')
+            }
+
+            const [list, count] = await query.getManyAndCount()
+            return { list, count }
+        }else{
+            let query = await this.boughtOutRepository.createQueryBuilder('bought_out')
             .leftJoinAndSelect('bought_out.bought_out_suppliers', 'bought_out_supplier')
             .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
             .select([
@@ -290,18 +392,44 @@ export class MachineService {
                 'supplier.supplier_name'
             ])
 
-        if (pagination?.page) {
-            query = query
-                .limit(pagination.limit)
-                .offset((pagination.page - 1) * pagination.limit)
-        }
+            if (pagination?.page) {
+                query = query
+                    .limit(pagination.limit)
+                    .offset((pagination.page - 1) * pagination.limit)
+            }
 
-        if (pagination?.search) {
-            query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
-        }
+            if (pagination?.search) {
+                query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
+                query = query.orWhere('LOWER(supplier.supplier_name) LIKE :supplierName', { supplierName: `%${pagination.search.toLowerCase()}%` })
+            }
 
-        const [list, count] = await query.getManyAndCount()
-        return { list, count }
+            const [list, count] = await query.getManyAndCount()
+            return { list, count }
+        }
+        
+    }
+
+    async getBoughtoutListByMachine(boughtoutByMachineDto: PartsByMachines) {
+        try{
+        let query = await this.boughtOutRepository.createQueryBuilder('bo')
+            .leftJoin(BoughtoutMachineEntity, 'boughtout_machine', 'boughtout_machine.bought_out_id = bo.id')
+            .select([
+                'bo.id',
+                'bo.bought_out_name'
+            ])
+            .where('boughtout_machine.machine_id IN (:...ids)', { ids: boughtoutByMachineDto.machines })
+            
+
+        const list = await query.getMany()
+        return { list  }
+        }catch(err){
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err.message,
+              }, HttpStatus.FORBIDDEN, {
+                cause: err.message
+              }); 
+        }
     }
 
     async createSubAssembly(createSubAssemblyDto: CreateSubAssembly) {
@@ -772,6 +900,28 @@ export class MachineService {
                     .where('id=:id', { id: updateAssemblyDetail.id })
                     .execute()
                 return { message: 'Sub Assembly updated successfully' }
+            } else if(updateAssemblyDetail.assembly_type.includes('sub_detail')) {
+                const subObj = await this.subAssemblyRepository.findOneBy({ id: updateAssemblyDetail.assembly_type_id })
+                const subNameObj = await this.subAssemblyRepository.findOneBy({ sub_assembly_name: updateAssemblyDetail.assembly_type_name})
+                if(subNameObj && subNameObj.id != subObj.id){
+                    return { message: 'Sub Assembly name already exists' }
+                }
+                
+                await this.partRepository.createQueryBuilder()
+                .update(SubAssemblyEntity).set({ sub_assembly_name: updateAssemblyDetail.assembly_type_name})
+                .where('id::VARCHAR=:id', { id: updateAssemblyDetail.assembly_type_id })
+                .execute()
+                
+                await this.subAssemblyMachineRepository.delete({sub_assembly_id: updateAssemblyDetail.assembly_type_id})
+                console.log("----------------", updateAssemblyDetail.machines)
+                updateAssemblyDetail.machines?.map(async (machine:any) => {
+                    await this.subAssemblyMachineRepository.save({
+                        sub_assembly_id: updateAssemblyDetail.assembly_type_id,
+                        machine_id: machine
+                    })            
+                })
+
+                return { message: 'Part updated successfully' }
             }
         } else if (updateAssemblyDetail.update_type.includes('add')) {
             let id = ""
@@ -872,7 +1022,47 @@ export class MachineService {
             this.updateBoughtoutDays(updateBoughtoutDto.boughtout_id)
             return { message: 'Boughout supplier removed successfully' }
         } else if (updateBoughtoutDto.update_type.includes('edit')) {
-            await this.boughtOutSupplierRepository.createQueryBuilder()
+            if(updateBoughtoutDto.update_type_entity.includes('bought_out_detail')){
+                const boughtoutObj = await this.boughtOutRepository.findOneBy({ id: updateBoughtoutDto.boughtout_id })
+                const boughtoutNameObj = await this.boughtOutRepository.findOneBy({ bought_out_name: updateBoughtoutDto.boughtout_name})
+                if(boughtoutNameObj && boughtoutNameObj.id != boughtoutObj.id){
+                    return { message: 'Boughtout name already exists' }
+                }
+                
+                await this.boughtOutRepository.createQueryBuilder()
+                .update(BoughtOutEntity).set({ bought_out_name: updateBoughtoutDto.boughtout_name,
+                    is_machine: updateBoughtoutDto.is_machine, is_spm: updateBoughtoutDto.is_spm,
+                    is_spare: updateBoughtoutDto.is_spare
+                 })
+                .where('id::VARCHAR=:id', { id: updateBoughtoutDto.boughtout_id })
+                .execute()
+
+                // await this.boughtOutMachineRepo.delete({bought_out: boughtoutObj})
+
+                // updateBoughtoutDto.machines?.map(async (machine:any) => {
+                //     const machineObj = await this.machineRepository.findOne({where: {id: machine}})
+                //     await this.boughtOutMachineRepo.save({
+                //         bought_out: boughtoutObj,
+                //         machine: machineObj
+                //     })            
+                // })
+
+                return { message: 'Boughtout updated successfully' }
+            }else if(updateBoughtoutDto.update_type_entity.includes('bought_out_machine_add')){
+                const machineObj = await this.machineRepository.findOne({where: {id: updateBoughtoutDto.id}})
+                const boughtoutObj = await this.boughtOutRepository.findOneBy({ id: updateBoughtoutDto.boughtout_id })
+                await this.boughtOutMachineRepo.save({
+                    bought_out: boughtoutObj,
+                    machine: machineObj
+                })
+                return { message: 'Machine added to Boughtout successfully' }
+            }else if(updateBoughtoutDto.update_type_entity.includes('bought_out_machine_delete')){
+                await this.boughtOutMachineRepo.createQueryBuilder().delete().from(BoughtoutMachineEntity)
+                .where('machine_id=:machineId', { machineId: updateBoughtoutDto.id})
+                .andWhere('boughtout_id=:boughtoutId', { boughtoutId: updateBoughtoutDto.boughtout_id })
+                return { message: 'Machine removed from Boughtout successfully' }
+            }else{
+                await this.boughtOutSupplierRepository.createQueryBuilder()
                 .update(BoughtOutSuppliertEntity)
                 .set({
                     delivery_time: updateBoughtoutDto.delivery_time,
@@ -883,6 +1073,7 @@ export class MachineService {
 
                 this.updateBoughtoutDays(updateBoughtoutDto.boughtout_id)
             return { message: 'Boughout supplier updated successfully' }
+            }            
         } else if (updateBoughtoutDto.update_type.includes('add')) {
             const supplier = await this.supplierRepository.findOne({ where: { id: updateBoughtoutDto.id } })
             const boughtOutObj = await this.boughtOutRepository.findOne({ where: { id: updateBoughtoutDto.boughtout_id } })
@@ -921,6 +1112,45 @@ export class MachineService {
 
                 this.updatePartDays(updatePartDto.part_id)
                 return { message: 'Process vendor updated successfully' }
+            } else if(updatePartDto.update_type_entity.includes('part_detail')){
+                const partObj = await this.partRepository.findOneBy({ id: updatePartDto.part_id })
+                const partNameObj = await this.partRepository.findOneBy({ part_name: updatePartDto.part_name})
+                if(partNameObj && partNameObj.id != partObj.id){
+                    return { message: 'Part name already exists' }
+                }
+                
+                await this.partRepository.createQueryBuilder()
+                .update(PartEntity).set({ part_name: updatePartDto.part_name, minimum_stock_qty: Number(updatePartDto.minimum_stock_qty),
+                    available_aty: Number(updatePartDto.available_qty), is_machine: updatePartDto.is_machine, is_spm: updatePartDto.is_spm,
+                    is_spare: updatePartDto.is_spare
+                 })
+                .where('id::VARCHAR=:id', { id: updatePartDto.part_id })
+                .execute()
+                
+                // await this.partMachineRepo.delete({part: partObj})
+
+                // updatePartDto.machines?.map(async (machine:any) => {
+                //     const machineObj = await this.machineRepository.findOne({where: {id: machine}})
+                //     await this.partMachineRepo.save({
+                //         part: partObj,
+                //         machine: machineObj
+                //     })            
+                // })
+
+                return { message: 'Part updated successfully' }
+            }else if(updatePartDto.update_type_entity.includes('part_machine_add')){
+                const partObj = await this.partRepository.findOneBy({ id: updatePartDto.part_id })
+                const machineObj = await this.machineRepository.findOne({where: {id: updatePartDto.id}})
+                await this.partMachineRepo.save({
+                    part: partObj,
+                    machine: machineObj
+                })
+                return { message: 'Machine added to Part successfully' }
+            }else if(updatePartDto.update_type_entity.includes('part_machine_delete')){
+                await this.partMachineRepo.createQueryBuilder().delete().from(PartMachineEntity)
+                    .where('machine_id=:machineId', { machineId: updatePartDto.id})
+                    .andWhere('part_id=:partId', { partId: updatePartDto.part_id })
+                return { message: 'Machine removed from Part successfully' }
             }
         } else if (updatePartDto.update_type.includes('add')) {
             if (updatePartDto.update_type_entity.includes('part_process')) {

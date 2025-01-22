@@ -165,7 +165,7 @@ export class CreateSupplier{
 
 export class CreateCustomer{
     @IsString()
-    customer_id:string;
+    customer_id:UUID;
 
     @IsString()
     @IsNotEmpty()

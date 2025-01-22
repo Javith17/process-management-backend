@@ -38,6 +38,8 @@ import { ProductionPartRescheduleEntity } from './model/production_part_reschedu
 import { ProductionMachineBoughtoutEntity } from './model/production_machine_boughtout.entity';
 import { ProductionMachineHistoryEntity } from './model/production_machine_history.entity';
 import { OrderModule } from './order/order.module';
+import { PartMachineEntity } from './model/part_machine.entity';
+import { BoughtoutMachineEntity } from './model/bought_out_machine.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -55,7 +57,8 @@ ConfigModule.forRoot()
         MainAssemblyEntity, MainAssemblyDetailEntity, SectionAssemblyEntity, SectionAssemblyDetailEntity,
         MachineSubAssemblyEntity, MachineQuotationEntity, SubAssemblyMachineEntity, AttachmentEntity,
         OrderConfirmationEntity, ProductionMachinePartEntity, VendorQuotationEntity, SupplierQuotationEntity,
-        ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity],
+        ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
+        PartMachineEntity, BoughtoutMachineEntity],
       synchronize: true,
     }),
     MulterModule.register({

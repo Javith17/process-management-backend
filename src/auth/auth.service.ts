@@ -42,12 +42,32 @@ export class AuthService {
                 'production_part.process_name',
                 'production_part.vendor_name',
                 'production_part.order_qty',
+                'production_part.part_id',
+                'production_part.vendor_id',
+                'production_part.order_id',
                 'production_part.delivery_date',
                 'production_part.vendor_accept_status'
             ]).where('production_part.id = :id', { id })
             .getOne()
         
-        return { productionPart: result}
+        const vendorParts = await this.productionMachinePartRepo.createQueryBuilder('production_part')
+        .select([
+            'production_part.id',
+            'production_part.part_name',
+            'production_part.process_name',
+            'production_part.vendor_name',
+            'production_part.order_qty',
+            'production_part.part_id',
+            'production_part.vendor_id',
+            'production_part.order_id',
+            'production_part.delivery_date',
+            'production_part.vendor_accept_status'
+        ])
+        .where('production_part.part_id = :part_id', { part_id: result.part_id })
+        .andWhere('production_part.order_id = :order_id', { order_id: result.order_id })
+        .andWhere('production_part.vendor_id = :vendor_id', { vendor_id: result.vendor_id })
+        .getMany()
+        return { productionPart: vendorParts}
     }
 
     async acceptVendor(acceptByVendor: AcceptByVendorDto){
@@ -59,7 +79,7 @@ export class AuthService {
                         vendor_accept_status: acceptByVendor.status,
                         status: acceptByVendor.status == "accepted" ? 'Vendor In-Progress' : 'Vendor Rejected'
                     })
-                    .where('id=:id', { id: acceptByVendor.id })
+                    .where('id IN (:...id)', { id: acceptByVendor.id })
                     .execute()
                 return { message: 'Order Accepted Successfully' }
     }

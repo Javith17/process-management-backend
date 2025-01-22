@@ -64,7 +64,7 @@ export class QuotationService {
                 created_by: createdByObj,
                 remarks: machineQuotation.remarks,
                 initial_cost: machineQuotation.cost.toString(),
-                status: 'Pending Approval'
+                status: 'Pending Verification'
             })
             return { message: 'Quotation created successfully' }
         } else {
@@ -341,7 +341,12 @@ export class QuotationService {
                         approval_remarks: approveDto.approval_reject_remarks,
                         approved_by: approveDto.approved_rejected_by,
                         approved_cost: approveDto.approved_cost.toString()
-                    } : {
+                    } : approveDto.status.includes('Verified') ? {
+                        status: 'Pending Approval',
+                        verification_remarks: approveDto.approval_reject_remarks,
+                        verified_by: approveDto.approved_rejected_by,
+                        approved_cost: approveDto.approved_cost.toString()
+                    } :{
                         status: approveDto.status,
                         reason: approveDto.approval_reject_remarks,
                         approved_by: approveDto.approved_rejected_by,
@@ -354,6 +359,18 @@ export class QuotationService {
                         .returning('*')
                         .execute())
                         .raw[0]
+
+                        this.historyRepo.save({
+                            parent_id: approveDto.quotation_id,
+                            type: 'Quotation',
+                            type_id: approveDto.quotation_id,
+                            type_name: existingMachine[0].quotation_no,
+                            data: { action: `${approveDto.status} Quotation` },
+                            remarks: '',
+                            from_status: '',
+                            to_status: `${approveDto.status} Quotation`,
+                            order: null
+                        })
 
                     if (approveDto.status.includes('Approved')) {
                         await this.addOrderConfirmation(approvedQuotation)

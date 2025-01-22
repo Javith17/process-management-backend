@@ -55,4 +55,11 @@ export abstract class MachineQuotationEntity extends BaseEntity {
 
     @Column({ nullable: true })
     approval_remarks: string;
+
+    @ManyToOne(() => UserEntity, (user) => user.id)
+    @JoinColumn({name: 'verified_by'})
+    verified_by: UserEntity;
+
+    @Column({ nullable: true })
+    verification_remarks: string;
 }

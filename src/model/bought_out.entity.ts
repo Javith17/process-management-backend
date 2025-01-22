@@ -15,4 +15,13 @@ export abstract class BoughtOutEntity extends BaseEntity{
 
     @Column({nullable: true})
     days: number;
+
+    @Column({nullable: true, default: false})
+    is_machine: boolean;
+
+    @Column({nullable: true, default: false})
+    is_spm: boolean;
+
+    @Column({nullable: true, default: false})
+    is_spare: boolean;
 }
