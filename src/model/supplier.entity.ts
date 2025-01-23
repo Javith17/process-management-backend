@@ -25,6 +25,9 @@ export abstract class SupplierEntity extends BaseEntity{
     supplier_pincode:string;
 
     @Column({ nullable:true })
+    supplier_gst:string;
+
+    @Column({ nullable:true })
     supplier_mobile_no1:string;
 
     @Column({ nullable:true })

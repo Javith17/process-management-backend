@@ -137,6 +137,10 @@ export class CreateSupplier{
 
     @IsString()
     @IsNotEmpty()
+    supplier_gst:string;
+
+    @IsString()
+    @IsNotEmpty()
     supplier_ifsc:string;
 
     @IsString()

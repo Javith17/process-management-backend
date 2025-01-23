@@ -361,7 +361,10 @@ export class MachineService {
             .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
             .select([
                 'bought_out.id',
-                'bought_out.bought_out_name'
+                'bought_out.bought_out_name',
+                'bought_out.is_machine',
+                'bought_out.is_spm',
+                'bought_out.is_spare'
             ])
 
             if (pagination?.page) {
@@ -385,6 +388,9 @@ export class MachineService {
                 'bought_out.id',
                 'bought_out.bought_out_name',
                 'bought_out.days',
+                'bought_out.is_machine',
+                'bought_out.is_spm',
+                'bought_out.is_spare',
                 'bought_out.bought_out_category',
                 'bought_out_supplier.cost',
                 'bought_out_supplier.delivery_time',

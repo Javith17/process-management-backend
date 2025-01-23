@@ -383,7 +383,8 @@ export class AdminService {
                 'suppliers.supplier_mobile_no2', 'suppliers.supplier_account_no',
                 'suppliers.supplier_bank_name', 'suppliers.supplier_ifsc',
                 'suppliers.supplier_location', 'suppliers.supplier_city',
-                'suppliers.supplier_state', 'suppliers.supplier_pincode'])
+                'suppliers.supplier_state', 'suppliers.supplier_pincode',
+                'suppliers.supplier_gst'])
             .where({ is_active: true })
 
         if (input?.page) {
@@ -424,6 +425,7 @@ export class AdminService {
             supplier_mobile_no1: supplierDto.supplier_mobile_no1,
             supplier_mobile_no2: supplierDto.supplier_mobile_no2,
             supplier_bank_name: supplierDto.supplier_bank_name,
+            supplier_gst: supplierDto.supplier_gst,
             supplier_ifsc: supplierDto.supplier_ifsc
         })
 
