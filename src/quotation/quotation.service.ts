@@ -207,6 +207,7 @@ export class QuotationService {
                 'machine_quotation.reminder_date',
                 'machine_quotation.qty',
                 'machine_quotation.remarks',
+                'machine_quotation.approved_cost',
                 'machine.id',
                 'machine.machine_name',
                 'customer.id',
@@ -216,6 +217,7 @@ export class QuotationService {
                 'machine_quotation.initial_cost',
                 'machine_quotation.status'
             ])
+            .orderBy('machine_quotation.created_at', 'DESC')
 
         if (pagination?.page) {
             query = query
@@ -360,17 +362,17 @@ export class QuotationService {
                         .execute())
                         .raw[0]
 
-                        this.historyRepo.save({
-                            parent_id: approveDto.quotation_id,
-                            type: 'Quotation',
-                            type_id: approveDto.quotation_id,
-                            type_name: existingMachine[0].quotation_no,
-                            data: { action: `${approveDto.status} Quotation` },
-                            remarks: '',
-                            from_status: '',
-                            to_status: `${approveDto.status} Quotation`,
-                            order: null
-                        })
+                        // this.historyRepo.save({
+                        //     parent_id: approveDto.quotation_id,
+                        //     type: 'Quotation',
+                        //     type_id: approveDto.quotation_id,
+                        //     type_name: existingMachine[0].quotation_no,
+                        //     data: { action: `${approveDto.status} Quotation` },
+                        //     remarks: '',
+                        //     from_status: '',
+                        //     to_status: `${approveDto.status} Quotation`,
+                        //     order: null
+                        // })
 
                     if (approveDto.status.includes('Approved')) {
                         await this.addOrderConfirmation(approvedQuotation)
@@ -532,7 +534,8 @@ export class QuotationService {
             machine: machineObj,
             customer: customerObj,
             quotation: approvedQuotation,
-            machine_name: machineObj.machine_name
+            machine_name: machineObj.machine_name,
+            status: 'Initiated'
         })
 
         const query = await this.sectionAssemblyRepo.createQueryBuilder('section_assembly')
@@ -634,6 +637,7 @@ export class QuotationService {
             ])
             .where('section_assembly.machine_id=:machine_id', { machine_id: machineObj.id })
             .getMany()
+        
 
         query[0].section_assembly_detail?.map((sd: any) => {
             if (sd.sub_assembly) {
@@ -761,7 +765,7 @@ export class QuotationService {
                     required_qty: part.qty,
                     order_qty: orderQty,
                     available_aty: partDetail.available_aty,
-                    status: 'Pending',
+                    status: orderQty == '0' ? 'In-Stores' : 'Pending',
                     machine_id: approvedQuotation.machine_id,
                     order: orderConfirmation
                 })

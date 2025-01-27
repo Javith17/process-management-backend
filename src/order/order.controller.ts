@@ -136,4 +136,9 @@ export class OrderController {
     getOrderHistory(@Param('orderId') orderId: UUID){
         return this.orderService.getOrderHistory(orderId)
     }
+
+    @Get('/orderDetail/:id')
+    getOrderDetails(@Param('id') orderId: UUID) {
+        return this.orderService.getOrderDetails(orderId)   
+    }
 }

@@ -44,11 +44,13 @@ export class OrderService {
             .leftJoinAndSelect('orders.customer', 'customer')
             .leftJoinAndSelect('orders.quotation', 'quotation')
             .select(['orders.id', 'orders.machine_name', 'customer.id',
+                'machine.id',
                 'customer.customer_name',
                 'quotation.id',
                 'orders.status',
                 'quotation.quotation_no',
                 'quotation.approved_cost'])
+            .orderBy('orders.created_at','DESC')
         if (pagination?.page) {
             query = query
                 .limit(pagination.limit)
@@ -844,7 +846,7 @@ export class OrderService {
             .innerJoin(ProductionMachinePartEntity, 'pm', 'o.id = pm.order_id')
             .innerJoin(PartEntity, 'p', 'p.id::VARCHAR = pm.part_id::VARCHAR')
             .innerJoin(MachineQuotationEntity, 'q', 'q.id = o.quotation_id')
-            .innerJoin(VendorEntity, 'v', 'pm.vendor_id = v.id::VARCHAR')
+            .leftJoin(VendorEntity, 'v', 'pm.vendor_id = v.id::VARCHAR')
             .select([
                 'pm.order_id',
                 'q.quotation_no',
@@ -958,5 +960,17 @@ export class OrderService {
                 .orderBy('o.created_at','ASC')
                 .getMany()
         return result;
+    }
+
+    async getOrderDetails(orderId: UUID){
+        return await this.orderConfirmationRepository.createQueryBuilder('orders')
+        .leftJoinAndSelect('orders.machine', 'machine')
+        .leftJoinAndSelect('orders.customer', 'customer')
+        .leftJoinAndSelect('orders.quotation', 'quotation')
+        .select(['orders.id','orders.machine_name','machine.id','customer.id',
+            'customer.customer_name', 'quotation.id', 'quotation.quotation_no', 'quotation.qty'
+        ])
+        .where('orders.id=:id', { id: orderId })
+        .getOne()
     }
 }

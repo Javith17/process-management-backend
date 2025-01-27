@@ -40,6 +40,10 @@ import { ProductionMachineHistoryEntity } from './model/production_machine_histo
 import { OrderModule } from './order/order.module';
 import { PartMachineEntity } from './model/part_machine.entity';
 import { BoughtoutMachineEntity } from './model/bought_out_machine.entity';
+import { AssemblyModule } from './assembly/assembly.module';
+import { AssemblyMachineSubEntity } from './model/assembly_machine_sub.entity';
+import { AssemblyMachineMainEntity } from './model/assembly_machine_main.entity';
+import { AssemblyMachineSectionEntity } from './model/assembly_machine_section.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -58,7 +62,7 @@ ConfigModule.forRoot()
         MachineSubAssemblyEntity, MachineQuotationEntity, SubAssemblyMachineEntity, AttachmentEntity,
         OrderConfirmationEntity, ProductionMachinePartEntity, VendorQuotationEntity, SupplierQuotationEntity,
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
-        PartMachineEntity, BoughtoutMachineEntity],
+        PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity],
       synchronize: true,
     }),
     MulterModule.register({
@@ -68,6 +72,6 @@ ConfigModule.forRoot()
       isGlobal:true
     }),
     AdminModule, AuthModule, MachineModule,
-    UserModule, QuotationModule, OrderModule]
+    UserModule, QuotationModule, OrderModule, AssemblyModule]
 })
 export class AppModule {}
