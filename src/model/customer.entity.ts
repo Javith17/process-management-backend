@@ -36,6 +36,9 @@ export abstract class CustomerEntity extends BaseEntity{
     @Column({ nullable:true })
     customer_pincode:string;
 
+    @Column({ nullable:true })
+    customer_gst:string;
+
     @Column({ type:'boolean', default:false })
     is_machine: boolean;
 

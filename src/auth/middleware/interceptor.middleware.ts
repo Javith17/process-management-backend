@@ -28,8 +28,9 @@ export class AuthInterceptor implements NestInterceptor{
                     request.body.created_by = decoded.userId
                 }else if(request?.route?.path?.includes('approveRejectQuotation')){
                     request.body.approved_rejected_by = decoded.userId
+                }else if(request?.route?.path?.includes('updateAssembly')){
+                    request.body.assembled_by = decoded.userId
                 }
-                // request.body.createdBy = decoded.userName
                 return next.handle()
             }catch(err){
                 console.log(err)

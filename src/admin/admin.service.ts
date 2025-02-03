@@ -499,6 +499,7 @@ export class AdminService {
             customer_mobile_no1: customerDto.customer_mobile_no1,
             customer_mobile_no2: customerDto.customer_mobile_no2,
             customer_bank_name: customerDto.customer_bank_name,
+            customer_gst: customerDto.customer_gst,
             customer_ifsc: customerDto.customer_ifsc,
             is_machine: customerDto.is_machine,
             is_spares: customerDto.is_spares,

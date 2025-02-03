@@ -209,6 +209,9 @@ export class CreateCustomer{
     @IsString()
     customer_mobile_no2:string;
 
+    @IsString()
+    customer_gst:string;
+
     @IsBoolean()
     is_machine:boolean;
 

@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { AssemblyMachineMainEntity } from 'src/model/assembly_machine_main.entity';
+import { AssemblyMachineSectionEntity } from 'src/model/assembly_machine_section.entity';
+import { AssemblyMachineSubEntity } from 'src/model/assembly_machine_sub.entity';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
 import { CustomerEntity } from 'src/model/customer.entity';
@@ -35,7 +38,10 @@ export class OrderService {
         @InjectRepository(MachineEntity) private machineRepo: Repository<MachineEntity>,
         @InjectRepository(CustomerEntity) private customerRepo: Repository<CustomerEntity>,
         @InjectRepository(PartEntity) private partsRepo: Repository<PartEntity>,
-        @InjectRepository(BoughtOutEntity) private boughtoutRepo: Repository<BoughtOutEntity>
+        @InjectRepository(BoughtOutEntity) private boughtoutRepo: Repository<BoughtOutEntity>,
+        @InjectRepository(AssemblyMachineSubEntity) private assemblySubRepo: Repository<AssemblyMachineSubEntity>,
+        @InjectRepository(AssemblyMachineMainEntity) private assemblyMainRepo: Repository<AssemblyMachineMainEntity>,
+        @InjectRepository(AssemblyMachineSectionEntity) private assemblySectionRepo: Repository<AssemblyMachineSectionEntity>,
     ) { }
 
     async getOrdersList(pagination: Pagination) {
@@ -50,16 +56,22 @@ export class OrderService {
                 'orders.status',
                 'quotation.quotation_no',
                 'quotation.approved_cost'])
-            .orderBy('orders.created_at','DESC')
+            .orderBy('orders.created_at', 'DESC')
+            .where('orders.status IS NOT NULL')
+
+            if (pagination?.search_list){
+                console.log("------------", pagination?.search_list)
+                query = query.andWhere('orders.status IN (:...status)', { status: pagination?.search_list })
+            }
+    
+            if (pagination?.search) {
+                query = query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
+            }
+            
         if (pagination?.page) {
             query = query
                 .limit(pagination.limit)
                 .offset((pagination.page - 1) * pagination.limit)
-        }
-
-        if (pagination?.search) {
-            query = query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
-                .orWhere('LOWER(orders.status) LIKE :status', { status: `%${pagination.search.toLowerCase()}%` })
         }
 
         const [list, count] = await query.getManyAndCount()
@@ -286,6 +298,36 @@ export class OrderService {
             .where('id= :part_id', { part_id: existingPart.id })
             .execute()
 
+        // Change status in assembly tables
+
+        await this.assemblySubRepo.createQueryBuilder()
+            .update(AssemblyMachineSubEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('part_id=:id', { id: existingPart.id })
+            .andWhere('order_id=:orderId', { orderId: movePartAssembly.order_id })
+            .execute()
+
+        await this.assemblyMainRepo.createQueryBuilder()
+            .update(AssemblyMachineMainEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('part_id=:id', { id: existingPart.id })
+            .andWhere('order_id=:orderId', { orderId: movePartAssembly.order_id })
+            .execute()
+
+        await this.assemblySectionRepo.createQueryBuilder()
+            .update(AssemblyMachineSectionEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('part_id=:id', { id: existingPart.id })
+            .andWhere('order_id=:orderId', { orderId: movePartAssembly.order_id })
+            .execute()
+
+
         const order = await this.orderConfirmationRepository.findOne({ where: { id: movePartAssembly.order_id } })
         await this.historyRepo.save({
             parent_id: movePartAssembly.production_part_id,
@@ -314,6 +356,35 @@ export class OrderService {
             .execute()
 
         const existingBoughtout = await this.boughtoutRepo.findOne({ where: { bought_out_name: moveBoughtoutAssembly.bought_out_name } })
+
+        // Change status in assembly tables
+
+        await this.assemblySubRepo.createQueryBuilder()
+            .update(AssemblyMachineSubEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('bought_out_id=:id', { id: existingBoughtout.id })
+            .andWhere('order_id=:orderId', { orderId: moveBoughtoutAssembly.order_id })
+            .execute()
+
+        await this.assemblyMainRepo.createQueryBuilder()
+            .update(AssemblyMachineMainEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('bought_out_id=:id', { id: existingBoughtout.id })
+            .andWhere('order_id=:orderId', { orderId: moveBoughtoutAssembly.order_id })
+            .execute()
+
+        await this.assemblySectionRepo.createQueryBuilder()
+            .update(AssemblyMachineSectionEntity)
+            .set({
+                status: 'Ready to Assemble'
+            })
+            .where('bought_out_id=:id', { id: existingBoughtout.id })
+            .andWhere('order_id=:orderId', { orderId: moveBoughtoutAssembly.order_id })
+            .execute()
 
         const order = await this.orderConfirmationRepository.findOne({ where: { id: moveBoughtoutAssembly.order_id } })
         await this.historyRepo.save({
@@ -765,7 +836,7 @@ export class OrderService {
             .addGroupBy('pmp.order_id')
             .addGroupBy('machine.machine_name')
             .addGroupBy('mq.quotation_no')
-            .where('od.status NOT IN (:...status)', { status: ['Order Closed']})
+            .where('od.status NOT IN (:...status)', { status: ['Order Closed'] })
             .getRawMany();
         const machineBOGraphQuery = await this.productionMachineBoughtoutRepo.createQueryBuilder('pmb')
             .innerJoinAndSelect(MachineEntity, 'machine', 'pmb.machine_id::VARCHAR = machine.id::VARCHAR')
@@ -776,7 +847,7 @@ export class OrderService {
             .addGroupBy('pmb.order_id')
             .addGroupBy('machine.machine_name')
             .addGroupBy('mq.quotation_no')
-            .where('od.status NOT IN (:...status)', { status: ['Order Closed']})
+            .where('od.status NOT IN (:...status)', { status: ['Order Closed'] })
             .getRawMany();
 
         const partArray: any[] = []
@@ -907,7 +978,7 @@ export class OrderService {
         } else if (!boClosed) {
             return { message: 'Boughtout assembly not completed' }
         } else {
-            const existingOrder = await this.orderConfirmationRepository.findOne({where: {id: closeOrderDto.order_id}})
+            const existingOrder = await this.orderConfirmationRepository.findOne({ where: { id: closeOrderDto.order_id } })
             await this.orderConfirmationRepository.createQueryBuilder()
                 .update(OrderConfirmationEntity)
                 .set({ status: 'Assembly Completed' })
@@ -954,23 +1025,23 @@ export class OrderService {
         }
     }
 
-    async getOrderHistory(orderId: UUID){
+    async getOrderHistory(orderId: UUID) {
         const result = await this.historyRepo.createQueryBuilder('o')
-                .where('o.order_id=:id', { id: orderId })
-                .orderBy('o.created_at','ASC')
-                .getMany()
+            .where('o.order_id=:id', { id: orderId })
+            .orderBy('o.created_at', 'ASC')
+            .getMany()
         return result;
     }
 
-    async getOrderDetails(orderId: UUID){
+    async getOrderDetails(orderId: UUID) {
         return await this.orderConfirmationRepository.createQueryBuilder('orders')
-        .leftJoinAndSelect('orders.machine', 'machine')
-        .leftJoinAndSelect('orders.customer', 'customer')
-        .leftJoinAndSelect('orders.quotation', 'quotation')
-        .select(['orders.id','orders.machine_name','machine.id','customer.id',
-            'customer.customer_name', 'quotation.id', 'quotation.quotation_no', 'quotation.qty'
-        ])
-        .where('orders.id=:id', { id: orderId })
-        .getOne()
+            .leftJoinAndSelect('orders.machine', 'machine')
+            .leftJoinAndSelect('orders.customer', 'customer')
+            .leftJoinAndSelect('orders.quotation', 'quotation')
+            .select(['orders.id', 'orders.machine_name', 'machine.id', 'customer.id',
+                'customer.customer_name', 'quotation.id', 'quotation.quotation_no', 'quotation.qty'
+            ])
+            .where('orders.id=:id', { id: orderId })
+            .getOne()
     }
 }

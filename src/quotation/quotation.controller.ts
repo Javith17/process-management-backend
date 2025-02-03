@@ -62,4 +62,19 @@ export class QuotationController {
     approveRejectQuotation(@Body() approveRejectDto: ApproveQuotationDto) {
         return this.quotationService.approveRejectQuotation(approveRejectDto)
     }
+
+    @Get('/quotation_doc/:id/:type')
+    getQuotationDoc(@Param ('id') id: UUID, @Param ('type') type: string){
+        return this.quotationService.generateInvoiceDocument(id, type)
+    }
+
+    @Post('/createSparesQoutation')
+    createSparesQuotation(@Body() sparesQuotation: CreateMachineQuotationDto) {
+        return this.quotationService.createSparesQuotation(sparesQuotation)   
+    }
+
+    @Get('/sparesQuotationList')
+    getSparesQuotationList(@Query() pagination: Pagination){
+        return this.quotationService.sparesQuotationList(pagination)
+    }
 }

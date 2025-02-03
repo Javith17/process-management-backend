@@ -1,4 +1,4 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsArray, IsNumber, IsString } from "class-validator";
 import { UUID } from "crypto";
 
 export class Pagination{
@@ -16,6 +16,9 @@ export class Pagination{
 
     @IsString()
     type_id: string;
+
+    @IsArray()
+    search_list: string[]
 }
 
 export class CheckNameDto {

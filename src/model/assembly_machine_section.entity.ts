@@ -47,6 +47,6 @@ export abstract class AssemblyMachineSectionEntity extends BaseEntity {
     order: OrderConfirmationEntity;
 
     @ManyToOne(() => UserEntity, (user) => user.id)
-    @JoinColumn({ name: 'approved_by' })
+    @JoinColumn({ name: 'assembled_by' })
     assembled_by: UserEntity;
 }

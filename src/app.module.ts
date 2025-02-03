@@ -44,6 +44,7 @@ import { AssemblyModule } from './assembly/assembly.module';
 import { AssemblyMachineSubEntity } from './model/assembly_machine_sub.entity';
 import { AssemblyMachineMainEntity } from './model/assembly_machine_main.entity';
 import { AssemblyMachineSectionEntity } from './model/assembly_machine_section.entity';
+import { SparesQuotationEntity } from './model/spares_quotation.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -62,7 +63,8 @@ ConfigModule.forRoot()
         MachineSubAssemblyEntity, MachineQuotationEntity, SubAssemblyMachineEntity, AttachmentEntity,
         OrderConfirmationEntity, ProductionMachinePartEntity, VendorQuotationEntity, SupplierQuotationEntity,
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
-        PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity],
+        PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
+        SparesQuotationEntity],
       synchronize: true,
     }),
     MulterModule.register({

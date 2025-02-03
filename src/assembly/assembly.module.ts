@@ -26,6 +26,8 @@ import { AssemblyMachineSubEntity } from "src/model/assembly_machine_sub.entity"
 import { AssemblyMachineMainEntity } from "src/model/assembly_machine_main.entity";
 import { OrderConfirmationEntity } from "src/model/order_confirmation.entity";
 import { AssemblyMachineSectionEntity } from "src/model/assembly_machine_section.entity";
+import { ProductionMachineHistoryEntity } from "src/model/production_machine_history.entity";
+import { UserEntity } from "src/model/user.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([PartEntity, PartProcessEntity, PartProcessVendorEntity, 
@@ -33,7 +35,7 @@ import { AssemblyMachineSectionEntity } from "src/model/assembly_machine_section
         MachineEntity, SubAssemblyEntity, SubAssemblyDetailEntity, MainAssemblyEntity, MainAssemblyDetailEntity,
         SectionAssemblyEntity, SectionAssemblyDetailEntity, MachineSubAssemblyEntity, SubAssemblyMachineEntity, AttachmentEntity,
         PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
-        OrderConfirmationEntity])],
+        OrderConfirmationEntity, ProductionMachineHistoryEntity, UserEntity])],
     controllers: [AssemblyController],
     providers: [AssemblyService]
   })

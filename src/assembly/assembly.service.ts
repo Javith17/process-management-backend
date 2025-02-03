@@ -32,6 +32,9 @@ import { AssemblyMachineSubEntity } from 'src/model/assembly_machine_sub.entity'
 import { AssemblyMachineMainEntity } from 'src/model/assembly_machine_main.entity';
 import { OrderConfirmationEntity } from 'src/model/order_confirmation.entity';
 import { AssemblyMachineSectionEntity } from 'src/model/assembly_machine_section.entity';
+import { UpdateAssemblyDto } from 'src/dto/assembly.dto';
+import { ProductionMachineHistoryEntity } from 'src/model/production_machine_history.entity';
+import { UserEntity } from 'src/model/user.entity';
 
 @Injectable()
 export class AssemblyService {
@@ -59,15 +62,17 @@ export class AssemblyService {
         @InjectRepository(AssemblyMachineSubEntity) private assemblySubRepo: Repository<AssemblyMachineSubEntity>,
         @InjectRepository(AssemblyMachineMainEntity) private assemblyMainRepo: Repository<AssemblyMachineMainEntity>,
         @InjectRepository(AssemblyMachineSectionEntity) private assemblySectionRepo: Repository<AssemblyMachineSectionEntity>,
-        @InjectRepository(OrderConfirmationEntity) private orderRepo: Repository<OrderConfirmationEntity>
+        @InjectRepository(OrderConfirmationEntity) private orderRepo: Repository<OrderConfirmationEntity>,
+        @InjectRepository(ProductionMachineHistoryEntity) private historyRepo: Repository<ProductionMachineHistoryEntity>,
+        @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>,
     ) { }
 
     async configureMachineAssemblies(machineId: string, orderId: UUID) {
         const mainSubAssemblyList = await this.machineRepository.createQueryBuilder('machine')
             .leftJoinAndSelect('machine.main_assembly', 'main')
             .leftJoinAndSelect('main.main_assembly_detail', 'main_detail')
-            .leftJoinAndSelect('main_detail.part','main_part')
-            .leftJoinAndSelect('main_detail.bought_out','main_bought_out')
+            .leftJoinAndSelect('main_detail.part', 'main_part')
+            .leftJoinAndSelect('main_detail.bought_out', 'main_bought_out')
             .leftJoinAndSelect('main_detail.sub_assembly', 'sub_assembly')
             .leftJoinAndSelect('sub_assembly.sub_assembly_detail', 'sub_detail')
             .leftJoinAndSelect('sub_detail.part', 'part')
@@ -127,18 +132,18 @@ export class AssemblyService {
             .andWhere('section_detail.sub_assembly is not null')
             .getMany()
 
-            const sectionMainAssemblyList = await this.machineRepository.createQueryBuilder('machine')
+        const sectionMainAssemblyList = await this.machineRepository.createQueryBuilder('machine')
             .innerJoinAndSelect('machine.section_assembly', 'section')
             .innerJoinAndSelect('section.section_assembly_detail', 'section_detail')
             .leftJoinAndSelect('section_detail.main_assembly', 'main_assembly')
             .leftJoinAndSelect('main_assembly.main_assembly_detail', 'main_detail')
-            .leftJoinAndSelect('section_detail.sub_assembly','section_sub')
-            .leftJoinAndSelect('section_detail.part','section_part')
-            .leftJoinAndSelect('section_detail.bought_out','section_bought_out')
+            .leftJoinAndSelect('section_detail.sub_assembly', 'section_sub')
+            .leftJoinAndSelect('section_detail.part', 'section_part')
+            .leftJoinAndSelect('section_detail.bought_out', 'section_bought_out')
             .leftJoinAndSelect('main_detail.sub_assembly', 'sub_assembly')
-            .leftJoinAndSelect('main_detail.part','main_part')
+            .leftJoinAndSelect('main_detail.part', 'main_part')
             .leftJoinAndSelect('main_detail.bought_out', 'main_bought_out')
-            .leftJoinAndSelect('sub_assembly.sub_assembly_detail','sub_detail')
+            .leftJoinAndSelect('sub_assembly.sub_assembly_detail', 'sub_detail')
             .leftJoinAndSelect('sub_detail.part', 'part')
             .leftJoinAndSelect('sub_detail.bought_out', 'bought_out')
             .select([
@@ -179,7 +184,7 @@ export class AssemblyService {
         let assembly_sub: any = []
         let sub_part: any = []
         let sub_bo: any = []
-        
+
         let main_assembly_sub: any = []
         let main_assembly_bo: any = []
         let main_assembly_part: any = []
@@ -193,86 +198,86 @@ export class AssemblyService {
 
         sectionMainAssemblyList.forEach((mainAssembly) => {
             mainAssembly.section_assembly.forEach((sectionAssembly) => {
-              sectionAssembly.section_assembly_detail.forEach((sectionDetail) => {
-                if(sectionDetail.main_assembly){
-                    section_assembly_main.push({
-                        section_assembly_id: sectionAssembly.id,
-                        section_assembly_name: sectionAssembly.section_assembly_name,
-                        main_assembly_id: sectionDetail.main_assembly.id,
-                        main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
-                        qty: sectionDetail.qty
-                    })
-                    const mainQty = sectionDetail.qty;
-                    sectionDetail.main_assembly.main_assembly_detail.forEach((mainDetail) => {
-                        if(mainDetail.sub_assembly){
-                            main_assembly_sub.push({
-                                main_assembly_id: sectionDetail.main_assembly.id,
-                                main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
-                                sub_assembly_id: mainDetail.sub_assembly.id,
-                                sub_assembly_name: mainDetail.sub_assembly.sub_assembly_name,
-                                qty: mainQty * mainDetail.qty ,
-                                main_assembly_qty: sectionDetail.qty
-                            })
-    
-                            const subQty = mainDetail.qty;
-                            const id = `${mainDetail.sub_assembly.id}~${mainDetail.sub_assembly.sub_assembly_name}`;
-                    
-                            const totalQty = mainQty * subQty;
-                            subAssemblyConsolidatedQty[id] =
-                                (subAssemblyConsolidatedQty[id] || 0) + totalQty;
-                        } else if(mainDetail.part){
-                            main_assembly_part.push({
-                                main_assembly_id: sectionDetail.main_assembly.id,
-                                main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
-                                part_id: mainDetail.part.id,
-                                part_name: mainDetail.part.part_name,
-                                qty: mainQty * mainDetail.qty ,
-                                main_assembly_qty: sectionDetail.qty
-                            })
-                        }else if(mainDetail.bought_out){
-                            main_assembly_bo.push({
-                                main_assembly_id: sectionDetail.main_assembly.id,
-                                main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
-                                bought_out_id: mainDetail.bought_out.id,
-                                bought_out_name: mainDetail.bought_out.bought_out_name,
-                                qty: mainQty * mainDetail.qty ,
-                                main_assembly_qty: sectionDetail.qty
-                            })
-                        }
-                    });
-                }else if(sectionDetail.sub_assembly){
-                    section_assembly_sub.push({
-                        section_assembly_id: sectionAssembly.id,
-                        section_assembly_name: sectionAssembly.section_assembly_name,
-                        sub_assembly_id: sectionDetail.sub_assembly.id,
-                        sub_assembly_name: sectionDetail.sub_assembly.sub_assembly_name,
-                        qty: sectionDetail.qty 
-                    })
-                }else if(sectionDetail.part){
-                    section_assembly_part.push({
-                        section_assembly_id: sectionAssembly.id,
-                        section_assembly_name: sectionAssembly.section_assembly_name,
-                        part_id: sectionDetail.part.id,
-                        part_name: sectionDetail.part.part_name,
-                        qty: sectionDetail.qty 
-                    })
-                }else if(sectionDetail.bought_out){
-                    section_assembly_bo.push({
-                        section_assembly_id: sectionAssembly.id,
-                        section_assembly_name: sectionAssembly.section_assembly_name,
-                        bought_out_id: sectionDetail.bought_out.id,
-                        bought_out_name: sectionDetail.bought_out.bought_out_name,
-                        qty: sectionDetail.qty 
-                    })
-                }
-              });
+                sectionAssembly.section_assembly_detail.forEach((sectionDetail) => {
+                    if (sectionDetail.main_assembly) {
+                        section_assembly_main.push({
+                            section_assembly_id: sectionAssembly.id,
+                            section_assembly_name: sectionAssembly.section_assembly_name,
+                            main_assembly_id: sectionDetail.main_assembly.id,
+                            main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
+                            qty: sectionDetail.qty
+                        })
+                        const mainQty = sectionDetail.qty;
+                        sectionDetail.main_assembly.main_assembly_detail.forEach((mainDetail) => {
+                            if (mainDetail.sub_assembly) {
+                                main_assembly_sub.push({
+                                    main_assembly_id: sectionDetail.main_assembly.id,
+                                    main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
+                                    sub_assembly_id: mainDetail.sub_assembly.id,
+                                    sub_assembly_name: mainDetail.sub_assembly.sub_assembly_name,
+                                    qty: mainQty * mainDetail.qty,
+                                    main_assembly_qty: sectionDetail.qty
+                                })
+
+                                const subQty = mainDetail.qty;
+                                const id = `${mainDetail.sub_assembly.id}~${mainDetail.sub_assembly.sub_assembly_name}`;
+
+                                const totalQty = mainQty * subQty;
+                                subAssemblyConsolidatedQty[id] =
+                                    (subAssemblyConsolidatedQty[id] || 0) + totalQty;
+                            } else if (mainDetail.part) {
+                                main_assembly_part.push({
+                                    main_assembly_id: sectionDetail.main_assembly.id,
+                                    main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
+                                    part_id: mainDetail.part.id,
+                                    part_name: mainDetail.part.part_name,
+                                    qty: mainQty * mainDetail.qty,
+                                    main_assembly_qty: sectionDetail.qty
+                                })
+                            } else if (mainDetail.bought_out) {
+                                main_assembly_bo.push({
+                                    main_assembly_id: sectionDetail.main_assembly.id,
+                                    main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
+                                    bought_out_id: mainDetail.bought_out.id,
+                                    bought_out_name: mainDetail.bought_out.bought_out_name,
+                                    qty: mainQty * mainDetail.qty,
+                                    main_assembly_qty: sectionDetail.qty
+                                })
+                            }
+                        });
+                    } else if (sectionDetail.sub_assembly) {
+                        section_assembly_sub.push({
+                            section_assembly_id: sectionAssembly.id,
+                            section_assembly_name: sectionAssembly.section_assembly_name,
+                            sub_assembly_id: sectionDetail.sub_assembly.id,
+                            sub_assembly_name: sectionDetail.sub_assembly.sub_assembly_name,
+                            qty: sectionDetail.qty
+                        })
+                    } else if (sectionDetail.part) {
+                        section_assembly_part.push({
+                            section_assembly_id: sectionAssembly.id,
+                            section_assembly_name: sectionAssembly.section_assembly_name,
+                            part_id: sectionDetail.part.id,
+                            part_name: sectionDetail.part.part_name,
+                            qty: sectionDetail.qty
+                        })
+                    } else if (sectionDetail.bought_out) {
+                        section_assembly_bo.push({
+                            section_assembly_id: sectionAssembly.id,
+                            section_assembly_name: sectionAssembly.section_assembly_name,
+                            bought_out_id: sectionDetail.bought_out.id,
+                            bought_out_name: sectionDetail.bought_out.bought_out_name,
+                            qty: sectionDetail.qty
+                        })
+                    }
+                });
             });
-          });
+        });
 
         mainSubAssemblyList.map((main: any) => {
             main.main_assembly.map((mad: any) => {
                 mad.main_assembly_detail.map((sub: any) => {
-                    if(sub.sub_assembly){
+                    if (sub.sub_assembly) {
                         sub.sub_assembly.sub_assembly_detail.map((detail: any) => {
                             if (detail.part) {
                                 if (sub_part.filter((sp: any) => sp.uid == `${sub.sub_assembly.id}_${detail.part.id}`)?.length == 0) {
@@ -286,7 +291,7 @@ export class AssemblyService {
                                     })
                                 }
                             }
-    
+
                             if (detail.bought_out) {
                                 if (sub_bo.filter((sp: any) => sp.uid == `${sub.sub_assembly.id}_${detail.bought_out.id}`)?.length == 0) {
                                     sub_bo.push({
@@ -298,7 +303,7 @@ export class AssemblyService {
                                         qty: detail.qty
                                     })
                                 }
-    
+
                             }
                         })
                     }
@@ -358,16 +363,16 @@ export class AssemblyService {
             })
         })
 
-        Object.keys(subAssemblyConsolidatedQty).map((key:string) => {
-            if(assembly_sub.filter((as:any) => as.uid == key.split('~')[0]).length == 0){
+        Object.keys(subAssemblyConsolidatedQty).map((key: string) => {
+            if (assembly_sub.filter((as: any) => as.uid == key.split('~')[0]).length == 0) {
                 assembly_sub.push({
                     uid: key.split('~')[0],
                     sub_assembly_name: key.split('~')[1],
                     qty: subAssemblyConsolidatedQty[key]
                 })
-            }else{
-                const existing = assembly_sub.filter((as:any) => as.uid == key.split('~')[0])[0]
-                assembly_sub = assembly_sub.filter((as:any) => as.uid != key.split('~')[0])
+            } else {
+                const existing = assembly_sub.filter((as: any) => as.uid == key.split('~')[0])[0]
+                assembly_sub = assembly_sub.filter((as: any) => as.uid != key.split('~')[0])
                 assembly_sub.push({
                     uid: key.split('~')[0],
                     sub_assembly_name: key.split('~')[1],
@@ -375,7 +380,7 @@ export class AssemblyService {
                 })
             }
         })
-        const order = await this.orderRepo.findOne({where: { id: orderId }})
+        const order = await this.orderRepo.findOne({ where: { id: orderId } })
 
         sub_part.map((sub: any) => {
             this.assemblySubRepo.save({
@@ -384,8 +389,8 @@ export class AssemblyService {
                 part_id: sub.part_id,
                 part_name: sub.part_name,
                 qty: sub.qty * assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
-                sub_assembly_qty: 
-                assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
+                sub_assembly_qty:
+                    assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
                 order
             })
         })
@@ -487,26 +492,148 @@ export class AssemblyService {
             .set({
                 status: 'In-Progress'
             })
-            .where('id=:id', {id: orderId})
+            .where('id=:id', { id: orderId })
             .execute()
         return { messag: 'Assembly configuration completed successfully' }
     }
 
-    async machineSubAssemblies(machineId: string, orderId: UUID){
+    async machineSubAssemblies(machineId: string, orderId: UUID) {
         return await this.assemblySubRepo.createQueryBuilder()
             .where('order_id=:orderId', { orderId })
+            .orderBy('id')
             .getMany()
     }
 
-    async machineMainAssemblies(machineId: string, orderId: UUID){
+    async machineMainAssemblies(machineId: string, orderId: UUID) {
         return await this.assemblyMainRepo.createQueryBuilder()
             .where('order_id=:orderId', { orderId })
+            .orderBy('id')
             .getMany()
     }
 
-    async machineSectionAssemblies(machineId: string, orderId: UUID){
+    async machineSectionAssemblies(machineId: string, orderId: UUID) {
         return await this.assemblySectionRepo.createQueryBuilder()
             .where('order_id=:orderId', { orderId })
+            .orderBy('id')
             .getMany()
+    }
+
+    async updateAssemblyStatus(cmd: UpdateAssemblyDto) {
+        const user = await this.userRepo.findOne({where: { id: cmd.assembled_by }})
+        if (cmd.assembly_type == 'sub_assembly') {            
+            await this.assemblySubRepo.createQueryBuilder()
+                .update(AssemblyMachineSubEntity)
+                .set({
+                    status: cmd.status,
+                    assembled_by: user
+                })
+                .where('id=:id', { id: cmd.id })
+                .execute()
+
+            const subAssemblyStatus = this.assemblySubRepo
+                .createQueryBuilder('s')
+                .select([
+                    's.sub_assembly_id',
+                    'COUNT(s.sub_assembly_id) AS sm_id',
+                    'SUM(CASE WHEN s.status = :status THEN 1 ELSE 0 END) AS completed_count',
+                ])
+                .where('s.sub_assembly_id=:subId', { subId: cmd.assembly_id })
+                .groupBy('s.sub_assembly_id')
+                .having('COUNT(s.sub_assembly_id) = SUM(CASE WHEN s.status = :status THEN 1 ELSE 0 END)')
+                .setParameters({
+                    status: 'Assembly Completed',
+                });
+
+            await subAssemblyStatus.execute().then(async (res: any) => {
+                if (res?.length > 0) {
+                    await this.assemblyMainRepo.createQueryBuilder()
+                        .update(AssemblyMachineMainEntity)
+                        .set({
+                            status: 'Ready to Assemble'
+                        })
+                        .where('sub_assembly_id=:id', { id: cmd.assembly_id })
+                        .andWhere('order_id=:orderId', { orderId: cmd.order_id })
+                        .execute()
+
+                    await this.assemblySectionRepo.createQueryBuilder()
+                        .update(AssemblyMachineSectionEntity)
+                        .set({
+                            status: 'Ready to Assemble'
+                        })
+                        .where('sub_assembly_id=:id', { id: cmd.assembly_id })
+                        .andWhere('order_id=:orderId', { orderId: cmd.order_id })
+                        .execute()
+                }
+            })
+
+            const order = await this.orderRepo.findOne({where: { id: cmd.order_id}})
+            await this.historyRepo.save({
+                parent_id: cmd.assembly_id,
+                type: 'Sub Assembly',
+                type_id: cmd.id,
+                type_name: cmd.name,
+                data: { action: cmd.status },
+                remarks: '',
+                from_status: '',
+                to_status: cmd.status,
+                order: order,
+                changed_by: cmd.assembled_by
+            })
+
+            return { message: 'Status updated successfully' }
+            
+        } else if (cmd.assembly_type == 'main_assembly') {            
+            await this.assemblyMainRepo.createQueryBuilder()
+                .update(AssemblyMachineMainEntity)
+                .set({
+                    status: cmd.status,
+                    assembled_by: user
+                })
+                .where('id=:id', { id: cmd.id })
+                .execute()
+
+            const mainAssemblyStatus = this.assemblyMainRepo
+                .createQueryBuilder('m')
+                .select([
+                    'm.main_assembly_id',
+                    'COUNT(m.main_assembly_id) AS m_id',
+                    'SUM(CASE WHEN m.status = :status THEN 1 ELSE 0 END) AS completed_count',
+                ])
+                .where('m.main_assembly_id=:mainId', { mainId: cmd.assembly_id })
+                .groupBy('m.main_assembly_id')
+                .having('COUNT(m.main_assembly_id) = SUM(CASE WHEN m.status = :status THEN 1 ELSE 0 END)')
+                .setParameters({
+                    status: 'Assembly Completed',
+                });
+
+            await mainAssemblyStatus.execute().then(async (res: any) => {
+                if (res?.length > 0) {
+                    await this.assemblySectionRepo.createQueryBuilder()
+                        .update(AssemblyMachineSectionEntity)
+                        .set({
+                            status: 'Ready to Assemble'
+                        })
+                        .where('main_assembly_id=:id', { id: cmd.assembly_id })
+                        .andWhere('order_id=:orderId', { orderId: cmd.order_id })
+                        .execute()
+                }
+            })
+
+            const order = await this.orderRepo.findOne({where: { id: cmd.order_id}})
+            await this.historyRepo.save({
+                parent_id: cmd.assembly_id,
+                type: 'Main Assembly',
+                type_id: cmd.id,
+                type_name: cmd.name,
+                data: { action: cmd.status },
+                remarks: '',
+                from_status: '',
+                to_status: cmd.status,
+                order: order,
+                changed_by: cmd.assembled_by
+            })
+
+            return { message: 'Status updated successfully' }
+        }
     }
 }

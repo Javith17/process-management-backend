@@ -7,7 +7,6 @@ export class CreateMachineQuotationDto {
     quotation_date:Date;
 
     @IsString()
-    @IsNotEmpty()
     machine_id: UUID;
 
     @IsString()
@@ -19,11 +18,9 @@ export class CreateMachineQuotationDto {
     reminder_date:Date;
 
     @IsNumber()
-    @IsNotEmpty()
     qty: number;
 
     @IsNumber()
-    @IsNotEmpty()
     cost: number;
 
     @IsString()
@@ -40,6 +37,12 @@ export class CreateMachineQuotationDto {
 
     @IsString()
     quotation_id: UUID;
+
+    @IsArray()
+    quotation_terms: Array<string>
+
+    @IsArray()
+    spares: Array<any>
 }
 
 export class ApproveQuotationDto {

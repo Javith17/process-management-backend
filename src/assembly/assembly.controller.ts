@@ -3,6 +3,7 @@ import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
 import { AssemblyService } from './assembly.service';
 import { UUID } from 'crypto';
+import { UpdateAssemblyDto } from 'src/dto/assembly.dto';
 const fs = require('fs')
 
 @UseGuards(AuthGuard)
@@ -29,5 +30,10 @@ export class AssemblyController {
     @Get('/getMachineSectionAssemblies/:machineId/:orderId')
     getMachineSectionAssemblies(@Param('machineId') machineId: string, @Param('orderId') orderId: UUID) {
         return this.assemblyService.machineSectionAssemblies(machineId, orderId)
+    }
+
+    @Post('/updateAssembly')
+    updateStartAssembly(@Body() cmd: UpdateAssemblyDto){
+        return this.assemblyService.updateAssemblyStatus(cmd)
     }
 }

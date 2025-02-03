@@ -4,8 +4,8 @@ import { CustomerEntity } from "./customer.entity";
 import { MachineEntity } from "./machine.entity";
 import { UserEntity } from "./user.entity";
 
-@Entity('machine_quotation')
-export abstract class MachineQuotationEntity extends BaseEntity {
+@Entity('spares_quotation')
+export abstract class SparesQuotationEntity extends BaseEntity {
     @Column({ unique: true })
     quotation_no:string;
 
@@ -34,13 +34,13 @@ export abstract class MachineQuotationEntity extends BaseEntity {
     @JoinColumn({name: 'follow_up_user_id'})
     user: UserEntity;
 
-    @ManyToOne(() => MachineEntity, (machine) => machine.id)
-    @JoinColumn({name: 'machine_id'})
-    machine: MachineEntity;
-
     @ManyToOne(() => CustomerEntity, (customer) => customer.id)
     @JoinColumn({name: 'customer_id'})
     customer: CustomerEntity;
+
+    @ManyToOne(() => MachineEntity, (machine) => machine.id)
+    @JoinColumn({name: 'machine_id'})
+    machine: MachineEntity;
 
     @Column({ nullable:true })
     qty: number;
@@ -65,4 +65,7 @@ export abstract class MachineQuotationEntity extends BaseEntity {
 
     @Column({ nullable: true, type: 'simple-json' })
     quotation_terms: string[]
+
+    @Column({ nullable:false, type: 'simple-json'})
+    spares: any[]
 }
