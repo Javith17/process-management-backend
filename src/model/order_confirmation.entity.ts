@@ -30,4 +30,7 @@ export abstract class OrderConfirmationEntity extends BaseEntity{
 
     @Column({ nullable: true })
     status:string;
+
+    @Column({ nullable: true })
+    order_type:string; //machine, spare, spm
 }

@@ -24,13 +24,15 @@ import { QuotationController } from "./quotation.controller";
 import { QuotationService } from "./quotation.service";
 import { ProductionMachineHistoryEntity } from "src/model/production_machine_history.entity";
 import { SparesQuotationEntity } from "src/model/spares_quotation.entity";
+import { MainAssemblyEntity } from "src/model/main_assembly.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([MachineQuotationEntity, MachineEntity, CustomerEntity, 
       UserEntity, OrderConfirmationEntity, SectionAssemblyEntity,SubAssemblyEntity, ProductionMachinePartEntity,
       PartProcessEntity, PartEntity, VendorQuotationEntity, VendorEntity, PartProcessVendorEntity,
       SupplierEntity, BoughtOutEntity, SupplierQuotationEntity, BoughtOutSuppliertEntity,
-      ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity, SparesQuotationEntity])],
+      ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity, SparesQuotationEntity,
+      MainAssemblyEntity ])],
     controllers: [QuotationController],
     providers: [QuotationService]
   })

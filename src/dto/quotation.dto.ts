@@ -63,6 +63,9 @@ export class ApproveQuotationDto {
 
     @IsNumber()
     approved_cost: number;
+
+    @IsArray()
+    spares: Array<any>
 }
 
 export class UpdateProductionMachinePartDto {
