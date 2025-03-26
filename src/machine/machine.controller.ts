@@ -200,4 +200,37 @@ export class MachineController {
     async vendorAttachment(@Body() vendorAttachmentDto: VendorAttachmentDto){
         return this.machineService.vendorAttachment(vendorAttachmentDto)
     }
+
+    @Post('/imageUpload')
+    @UseInterceptors(FilesInterceptor('files', 1
+    , {
+        storage: diskStorage({
+            destination: (req, file, cb)=>{
+                cb(null,'./images')
+            },
+            filename: (req,file,cb)=>{
+                cb(null, file.originalname)
+            }
+        })
+    }
+    ))
+    async imageUpload(@UploadedFiles() files: Express.Multer.File[], @Body() fileDto: FileDto){
+        await this.machineService.createPartBOImage(fileDto)
+        return { message: 'Image uploaded successfully' }
+    }
+
+    @Get('/loadImage/:imageName')
+    getPartBOImage(@Param('imageName') imageName:string,@Res() res: Response){
+        return res.sendFile(join(process.cwd(), 'images/' + imageName))
+    }
+
+    @Get('/viewImage/:type/:id')
+    async getAssemblyImage(@Param('type') type:string, @Param('id') id:string,@Res() res: Response){
+        const imageName = await this.machineService.getAssemblyImage(type, id)
+        if(imageName){
+            return res.sendFile(join(process.cwd(), 'images/' + imageName))
+        }else {
+            return 'No Image'
+        }
+    }
 }

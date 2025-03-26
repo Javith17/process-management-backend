@@ -28,4 +28,7 @@ export abstract class PartEntity extends BaseEntity{
 
     @Column({nullable: true})
     days: number;
+
+    @Column({nullable: true })
+    image: string;
 }

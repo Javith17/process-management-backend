@@ -459,7 +459,7 @@ export class QuotationService {
                         status: 'Pending Approval',
                         verification_remarks: approveDto.approval_reject_remarks,
                         verified_by: approveDto.approved_rejected_by,
-                        approved_cost: approveDto.approved_cost.toString()
+                        approved_cost: approveDto.approved_cost?.toString()
                     } : {
                         status: approveDto.status,
                         reason: approveDto.approval_reject_remarks,
@@ -497,42 +497,42 @@ export class QuotationService {
         }else if(approveDto.quotation_type.includes('spares')){
             const existingMachine = await this.sparesRepo.find({ select: ['id'], where: { id: approveDto.quotation_id } })
             if (existingMachine.length > 0) {
-                    // const updateObj = approveDto.status.includes('Approved') ? {
-                    //     status: approveDto.status,
-                    //     approval_remarks: approveDto.approval_reject_remarks,
-                    //     approved_by: approveDto.approved_rejected_by,
-                    //     approved_cost: approveDto.approved_cost.toString()
-                    // } : approveDto.status.includes('Verified') ? {
-                    //     status: 'Pending Approval',
-                    //     verification_remarks: approveDto.approval_reject_remarks,
-                    //     verified_by: approveDto.approved_rejected_by,
-                    //     approved_cost: approveDto.approved_cost.toString()
-                    // } : {
-                    //     status: approveDto.status,
-                    //     reason: approveDto.approval_reject_remarks,
-                    //     approved_by: approveDto.approved_rejected_by,
-                    //     approved_cost: approveDto.approved_cost.toString()
-                    // }
-                    // const approvedQuotation = (await this.sparesRepo.createQueryBuilder()
-                    //     .update(SparesQuotationEntity)
-                    //     .set(updateObj)
-                    //     .where('id=:id', { id: approveDto.quotation_id })
-                    //     .returning('*')
-                    //     .execute())
-                    //     .raw[0]
+                    const updateObj = approveDto.status.includes('Approved') ? {
+                        status: approveDto.status,
+                        approval_remarks: approveDto.approval_reject_remarks,
+                        approved_by: approveDto.approved_rejected_by,
+                        approved_cost: approveDto.approved_cost.toString()
+                    } : approveDto.status.includes('Verified') ? {
+                        status: 'Pending Approval',
+                        verification_remarks: approveDto.approval_reject_remarks,
+                        verified_by: approveDto.approved_rejected_by,
+                        approved_cost: approveDto.approved_cost.toString()
+                    } : {
+                        status: approveDto.status,
+                        reason: approveDto.approval_reject_remarks,
+                        approved_by: approveDto.approved_rejected_by,
+                        approved_cost: approveDto.approved_cost.toString()
+                    }
+                    const approvedQuotation = (await this.sparesRepo.createQueryBuilder()
+                        .update(SparesQuotationEntity)
+                        .set(updateObj)
+                        .where('id=:id', { id: approveDto.quotation_id })
+                        .returning('*')
+                        .execute())
+                        .raw[0]
 
-                    // this.historyRepo.save({
-                    //     parent_id: approveDto.quotation_id,
-                    //     type: 'Quotation',
-                    //     type_id: approveDto.quotation_id,
-                    //     type_name: existingMachine[0].quotation_no,
-                    //     data: { action: `${approveDto.status} Quotation` },
-                    //     remarks: '',
-                    //     from_status: '',
-                    //     to_status: `${approveDto.status} Quotation`,
-                    //     order: null
-                    // })
-                    const approvedQuotation = await this.sparesRepo.findOne({where: { id: approveDto.quotation_id }})
+                    this.historyRepo.save({
+                        parent_id: approveDto.quotation_id,
+                        type: 'Quotation',
+                        type_id: approveDto.quotation_id,
+                        type_name: existingMachine[0].quotation_no,
+                        data: { action: `${approveDto.status} Quotation` },
+                        remarks: '',
+                        from_status: '',
+                        to_status: `${approveDto.status} Quotation`,
+                        order: null
+                    })
+
                     if (approveDto.status.includes('Approved')) {
                         await this.addSparesOrderConfirmation(approvedQuotation)
                     }
@@ -951,26 +951,89 @@ export class QuotationService {
 
         const parts: Array<{ id: string, name: string, qty: number, process?: any }> = []
         const boughtouts: Array<{ id: string, name: string, qty: number }> = []
-
-        console.log("--------------", {
-            machine: machineObj,
-            customer: customerObj,
-            quotation: approvedQuotation,
-            machine_name: machineObj.machine_name,
-            order_type: 'spares',
-            status: 'Initiated'
-        })
+        
+        const spares = JSON.parse(approvedQuotation.spares)
+        
         const orderConfirmation = await this.orderConfirmationRepository.save({
             machine: machineObj,
             customer: customerObj,
-            quotation: approvedQuotation,
+            spares_quotation: approvedQuotation,
             machine_name: machineObj.machine_name,
             order_type: 'spares',
             status: 'Initiated'
         })
         
-        const spares = JSON.parse(JSON.stringify(approvedQuotation.spares))
-        const mainAssemblyQuery = await this.mainAssemblyRepo.createQueryBuilder('main')
+        spares.forEach(spare => {
+            if (spare.spare_type == 'bought_out') {
+                const b = boughtouts.findIndex((f) => f.id == spare.spare_id)
+                if (b < 0) {
+                    boughtouts.push({ id: spare.spare_id, name: spare.spare_name, qty: Number(spare.spare_qty) })
+                } else {
+                    boughtouts[b] = { id: spare.spare_id, name: spare.spare_name, qty: Number(spare.spare_qty) + Number(boughtouts[b].qty) }
+                }
+            }
+        });
+
+        if(spares.filter((spare:any) => spare.spare_type == 'part').length > 0){
+            let partsQuery = await this.partRepo.createQueryBuilder('part')
+            .leftJoinAndSelect('part.part_process_list', 'part_process_list')
+            .leftJoinAndSelect('part_process_list.process', 'part_process')
+            .where('part.id in (:...ids)', { ids: spares.filter((spare:any) => spare.spare_type == 'part').map((spare:any) => spare.spare_id)})
+            .getMany()
+            
+            partsQuery.map((part:any) => {
+                const subSpare = spares.filter((sp:any) => sp.spare_id == part.id && sp.spare_type == 'part')[0]
+                const p = parts.findIndex((f) => f.id == part.id)
+                    if (p < 0) {
+                        parts.push({
+                            id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty), process: part.part_process_list.map((pl: any) => {
+                                return { id: pl.process.id, process: pl.process.process_name }
+                            })
+                        })
+                    } else {
+                        parts[p] = { id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty) + Number(parts[p].qty), process: parts[p].process }
+                    }
+            })
+        }
+
+        if(spares.filter((spare:any) => spare.spare_type == 'sub_assembly').length > 0){
+            let subAssemblyQuery = await this.subAssemblyRepo.createQueryBuilder('sub')
+            .leftJoinAndSelect('sub.sub_assembly_detail', 'sub_detail')
+            .leftJoinAndSelect('sub_detail.part', 'sub_part')
+            .leftJoinAndSelect('sub_part.part_process_list', 'sub_part_process_list')
+            .leftJoinAndSelect('sub_part_process_list.process', 'sub_part_process')
+            .leftJoinAndSelect('sub_detail.bought_out', 'sub_bought_out')
+            .where('sub.id in (:...ids)', { ids: spares.filter((spare:any) => spare.spare_type == 'sub_assembly').map((spare:any) => spare.spare_id)})
+            .getMany()
+
+            subAssemblyQuery.map((sub:any) => {
+                const subSpare = spares.filter((sp:any) => sp.spare_id == sub.id && sp.spare_type == 'sub_assembly')[0]
+                sub.sub_assembly_detail?.map((sd: any) => {
+                    if(sd.part){
+                        const p = parts.findIndex((f) => f.id == sd.part.id)
+                        if (p < 0) {
+                            parts.push({
+                                id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
+                                    return { id: pl.process.id, process: pl.process.process_name }
+                                })
+                            })
+                        } else {
+                            parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
+                        }
+                    }else if(sd.bought_out){
+                        const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
+                        if (b < 0) {
+                            boughtouts.push({ id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: Number(sd.qty) * Number(subSpare.spare_qty) })
+                        } else {
+                            boughtouts[b] = { id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
+                        }
+                    }
+                })
+            })
+        }
+
+        if(spares.filter((spare:any) => spare.spare_type == 'main_assembly').length > 0){
+            let mainAssemblyQuery: any = await this.mainAssemblyRepo.createQueryBuilder('main')
             .leftJoinAndSelect('main.main_assembly_detail', 'main_detail')
 
             .leftJoinAndSelect('main_detail.part', 'main_part')
@@ -984,129 +1047,63 @@ export class QuotationService {
             .leftJoinAndSelect('sub_detail.part', 'sub_part')
             .leftJoinAndSelect('sub_part.part_process_list', 'sub_part_process_list')
             .leftJoinAndSelect('sub_part_process_list.process', 'sub_part_process')
-
             .leftJoinAndSelect('sub_detail.bought_out', 'sub_bought_out')
             .where('main.id in (:...ids)', { ids: spares.filter((spare:any) => spare.spare_type == 'main_assembly').map((spare:any) => spare.spare_id)})
             .getMany()
 
-            const subAssemblyQuery = await this.subAssemblyRepo.createQueryBuilder('sub')
-            .leftJoinAndSelect('sub.sub_assembly_detail', 'sub_detail')
-            .leftJoinAndSelect('sub_detail.part', 'sub_part')
-            .leftJoinAndSelect('sub_part.part_process_list', 'sub_part_process_list')
-            .leftJoinAndSelect('sub_part_process_list.process', 'sub_part_process')
-            .leftJoinAndSelect('sub_detail.bought_out', 'sub_bought_out')
-            .where('sub.id in (:...ids)', { ids: spares.filter((spare:any) => spare.spare_type == 'sub_assembly').map((spare:any) => spare.spare_id)})
-            .getMany()
-
-            const partsQuery = await this.partRepo.createQueryBuilder('part')
-            .leftJoinAndSelect('part.part_process_list', 'part_process_list')
-            .leftJoinAndSelect('part_process_list.process', 'part_process')
-            .where('part.id in (:...ids)', { ids: spares.filter((spare:any) => spare.spare_type == 'part').map((spare:any) => spare.spare_id)})
-            .getMany()
-
-        
-        spares.forEach(spare => {
-            if (spare.spare_type == 'bought_out') {
-                const b = boughtouts.findIndex((f) => f.id == spare.spare_id)
-                if (b < 0) {
-                    boughtouts.push({ id: spare.spare_id, name: spare.spare_name, qty: Number(spare.spare_qty) })
-                } else {
-                    boughtouts[b] = { id: spare.spare_id, name: spare.spare_name, qty: Number(spare.spare_qty) + Number(boughtouts[b].qty) }
-                }
-            }
-        });
-
-        partsQuery.map((part:any) => {
-            const subSpare = spares.filter((sp:any) => sp.spare_id == part.id && sp.spare_type == 'part')[0]
-            const p = parts.findIndex((f) => f.id == part.id)
-                if (p < 0) {
-                    parts.push({
-                        id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty), process: part.part_process_list.map((pl: any) => {
-                            return { id: pl.process.id, process: pl.process.process_name }
-                        })
-                    })
-                } else {
-                    parts[p] = { id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty) + Number(parts[p].qty), process: parts[p].process }
-                }
-        })
-
-        subAssemblyQuery.map((sub:any) => {
-            const subSpare = spares.filter((sp:any) => sp.spare_id == sub.id && sp.spare_type == 'sub_assembly')[0]
-            sub.sub_assembly_detail?.map((sd: any) => {
-                if(sd.part){
-                    const p = parts.findIndex((f) => f.id == sd.part.id)
-                    if (p < 0) {
-                        parts.push({
-                            id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
-                                return { id: pl.process.id, process: pl.process.process_name }
-                            })
-                        })
-                    } else {
-                        parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
-                    }
-                }else if(sd.bought_out){
-                    const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
-                    if (b < 0) {
-                        boughtouts.push({ id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: Number(sd.qty) * Number(subSpare.spare_qty) })
-                    } else {
-                        boughtouts[b] = { id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
-                    }
-                }
-            })
-        })
-
-        mainAssemblyQuery.map((main:any) => {
-            const subSpare = spares.filter((sp:any) => sp.spare_id == main.id && sp.spare_type == 'main_assembly')[0]
-            main.main_assembly_detail?.map((sd: any) => {
-                if(sd.part){
-                    const p = parts.findIndex((f) => f.id == sd.part.id)
-                    if (p < 0) {
-                        parts.push({
-                            id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
-                                return { id: pl.process.id, process: pl.process.process_name }
-                            })
-                        })
-                    } else {
-                        parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
-                    }
-                }else if(sd.bought_out){
-                    const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
-                    if (b < 0) {
-                        boughtouts.push({ id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: Number(sd.qty) * Number(subSpare.spare_qty) })
-                    } else {
-                        boughtouts[b] = { id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
-                    }
-                }else if(sd.sub_assembly){
-                    sd.sub_assembly.sub_assembly_detail.map((sad:any) => {
-                        if(sad.part){
-                            const p = parts.findIndex((f) => f.id == sad.part.id)
-                            if (p < 0) {
-                                parts.push({
-                                    id: sad.part.id, name: sad.part.part_name, 
-                                    qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty), 
-                                    process: sad.part.part_process_list.map((pl: any) => {
-                                        return { id: pl.process.id, process: pl.process.process_name }
-                                    })
+            mainAssemblyQuery.map((main:any) => {
+                const subSpare = spares.filter((sp:any) => sp.spare_id == main.id && sp.spare_type == 'main_assembly')[0]
+                main.main_assembly_detail?.map((sd: any) => {
+                    if(sd.part){
+                        const p = parts.findIndex((f) => f.id == sd.part.id)
+                        if (p < 0) {
+                            parts.push({
+                                id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
+                                    return { id: pl.process.id, process: pl.process.process_name }
                                 })
-                            } else {
-                                parts[p] = { id: sad.part.id, name: sad.part.part_name, 
-                                    qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), 
-                                    process: parts[p].process }
-                            }
-                        }else if(sad.bought_out){
-                            const b = boughtouts.findIndex((f) => f.id == sad.bought_out.id)
-                            if (b < 0) {
-                                boughtouts.push({ id: sad.bought_out.id, name: sad.bought_out.bought_out_name, 
-                                    qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty) })
-                            } else {
-                                boughtouts[b] = { id: sad.bought_out.id, name: sad.bought_out.bought_out_name, 
-                                    qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
-                            }
+                            })
+                        } else {
+                            parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
                         }
-                    })
-                }
+                    }else if(sd.bought_out){
+                        const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
+                        if (b < 0) {
+                            boughtouts.push({ id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: Number(sd.qty) * Number(subSpare.spare_qty) })
+                        } else {
+                            boughtouts[b] = { id: sd.bought_out.id, name: sd.bought_out.bought_out_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
+                        }
+                    }else if(sd.sub_assembly){
+                        sd.sub_assembly.sub_assembly_detail.map((sad:any) => {
+                            if(sad.part){
+                                const p = parts.findIndex((f) => f.id == sad.part.id)
+                                if (p < 0) {
+                                    parts.push({
+                                        id: sad.part.id, name: sad.part.part_name, 
+                                        qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty), 
+                                        process: sad.part.part_process_list.map((pl: any) => {
+                                            return { id: pl.process.id, process: pl.process.process_name }
+                                        })
+                                    })
+                                } else {
+                                    parts[p] = { id: sad.part.id, name: sad.part.part_name, 
+                                        qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), 
+                                        process: parts[p].process }
+                                }
+                            }else if(sad.bought_out){
+                                const b = boughtouts.findIndex((f) => f.id == sad.bought_out.id)
+                                if (b < 0) {
+                                    boughtouts.push({ id: sad.bought_out.id, name: sad.bought_out.bought_out_name, 
+                                        qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty) })
+                                } else {
+                                    boughtouts[b] = { id: sad.bought_out.id, name: sad.bought_out.bought_out_name, 
+                                        qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(boughtouts[b].qty) }
+                                }
+                            }
+                        })
+                    }
+                })
             })
-        })
+        }
 
         boughtouts.map(async (boughtout: any) => {
             await this.productionMachineBoughtoutRepo.save({

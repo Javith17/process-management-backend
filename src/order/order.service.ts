@@ -49,18 +49,22 @@ export class OrderService {
             .leftJoinAndSelect('orders.machine', 'machine')
             .leftJoinAndSelect('orders.customer', 'customer')
             .leftJoinAndSelect('orders.quotation', 'quotation')
+            .leftJoinAndSelect('orders.spares_quotation', 'spares_quotation')
             .select(['orders.id', 'orders.machine_name', 'customer.id',
                 'machine.id',
                 'customer.customer_name',
                 'quotation.id',
                 'orders.status',
                 'quotation.quotation_no',
-                'quotation.approved_cost'])
+                'quotation.approved_cost',
+                'spares_quotation.id',
+                'orders.status',
+                'spares_quotation.quotation_no',
+                'spares_quotation.approved_cost'])
             .orderBy('orders.created_at', 'DESC')
             .where('orders.status IS NOT NULL')
 
             if (pagination?.search_list){
-                console.log("------------", pagination?.search_list)
                 query = query.andWhere('orders.status IN (:...status)', { status: pagination?.search_list })
             }
     

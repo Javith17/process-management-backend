@@ -22,6 +22,9 @@ export abstract class MainAssemblyEntity extends BaseEntity{
     @JoinColumn({name:'machine_id'})
     machine: MachineEntity;
 
+    @Column({nullable: true })
+    image: string;
+    
     // @Column({nullable: true})
     // days: number;
 }

@@ -24,4 +24,7 @@ export abstract class BoughtOutEntity extends BaseEntity{
 
     @Column({nullable: true, default: false})
     is_spare: boolean;
+
+    @Column({nullable: true })
+    image: string;
 }

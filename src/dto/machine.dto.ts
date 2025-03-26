@@ -290,6 +290,9 @@ export class FileDto {
 
     @IsArray()
     file_list: Array<FileDetailsDto>;
+
+    @IsString()
+    image_name: string;
 }
 
 export class FileDetailsDto {

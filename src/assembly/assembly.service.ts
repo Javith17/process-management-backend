@@ -35,6 +35,7 @@ import { AssemblyMachineSectionEntity } from 'src/model/assembly_machine_section
 import { UpdateAssemblyDto } from 'src/dto/assembly.dto';
 import { ProductionMachineHistoryEntity } from 'src/model/production_machine_history.entity';
 import { UserEntity } from 'src/model/user.entity';
+import { SparesQuotationEntity } from 'src/model/spares_quotation.entity';
 
 @Injectable()
 export class AssemblyService {
@@ -65,7 +66,33 @@ export class AssemblyService {
         @InjectRepository(OrderConfirmationEntity) private orderRepo: Repository<OrderConfirmationEntity>,
         @InjectRepository(ProductionMachineHistoryEntity) private historyRepo: Repository<ProductionMachineHistoryEntity>,
         @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>,
+        @InjectRepository(SparesQuotationEntity) private sparesQuotationRepo: Repository<SparesQuotationEntity>
     ) { }
+
+    async configureSparesAssemblies(machineId: string, orderId: UUID) {
+        const order = await this.orderRepo.findOne({where: { id: orderId }})
+        const quotation = await this.sparesQuotationRepo.findOne({where: { id: order.spares_quotation.id }})
+        const spares = quotation.spares
+        console.log("----------")
+
+        // if (sectionDetail.part) {
+        //     section_assembly_part.push({
+        //         section_assembly_id: sectionAssembly.id,
+        //         section_assembly_name: sectionAssembly.section_assembly_name,
+        //         part_id: sectionDetail.part.id,
+        //         part_name: sectionDetail.part.part_name,
+        //         qty: sectionDetail.qty
+        //     })
+        // } else if (sectionDetail.bought_out) {
+        //     section_assembly_bo.push({
+        //         section_assembly_id: sectionAssembly.id,
+        //         section_assembly_name: sectionAssembly.section_assembly_name,
+        //         bought_out_id: sectionDetail.bought_out.id,
+        //         bought_out_name: sectionDetail.bought_out.bought_out_name,
+        //         qty: sectionDetail.qty
+        //     })
+        // }
+    }
 
     async configureMachineAssemblies(machineId: string, orderId: UUID) {
         const mainSubAssemblyList = await this.machineRepository.createQueryBuilder('machine')

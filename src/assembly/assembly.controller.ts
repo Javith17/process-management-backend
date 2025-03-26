@@ -17,6 +17,11 @@ export class AssemblyController {
         return this.assemblyService.configureMachineAssemblies(machineId, orderId)
     }
 
+    @Get('/configureSparesAssemblies/:machineId/:orderId')
+    configureSparesAssemblies(@Param('machineId') machineId: string, @Param('orderId') orderId: UUID) {
+        return this.assemblyService.configureSparesAssemblies(machineId, orderId)
+    }
+
     @Get('/getMachineSubAssemblies/:machineId/:orderId')
     getMachineSubAssemblies(@Param('machineId') machineId: string, @Param('orderId') orderId: UUID) {
         return this.assemblyService.machineSubAssemblies(machineId, orderId)

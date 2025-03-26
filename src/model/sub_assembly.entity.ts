@@ -17,6 +17,9 @@ export abstract class SubAssemblyEntity extends BaseEntity{
     @OneToMany(()=> SubAssemblyDetailEntity, (subAssemblyDetail)=>subAssemblyDetail.sub_assembly)
     sub_assembly_detail: SubAssemblyDetailEntity[];
 
+    @Column({nullable: true })
+    image: string;
+    
     // @Column({nullable: true})
     // days: number;
 

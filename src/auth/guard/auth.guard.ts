@@ -15,7 +15,8 @@ export class AuthGuard implements CanActivate{
     async validateRequest(request:Request){
         try{
             let reqUrl = request.url;
-            if(reqUrl.includes("loadAttachment") || reqUrl.includes("check")){
+            if(reqUrl.includes("loadAttachment") || reqUrl.includes("check")
+            || reqUrl.includes("loadImage") || reqUrl.includes("viewImage")){
                 return true
             }else{
                 const token = request.headers.authorization.replace('Bearer ',"");

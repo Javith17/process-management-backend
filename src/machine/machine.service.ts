@@ -51,7 +51,7 @@ export class MachineService {
         @InjectRepository(SubAssemblyMachineEntity) private subAssemblyMachineRepository: Repository<SubAssemblyMachineEntity>,
         @InjectRepository(AttachmentEntity) private attachmentRepository: Repository<AttachmentEntity>,
         @InjectRepository(PartMachineEntity) private partMachineRepo: Repository<PartMachineEntity>,
-        @InjectRepository(BoughtoutMachineEntity) private boughtOutMachineRepo: Repository<BoughtoutMachineEntity>
+        @InjectRepository(BoughtoutMachineEntity) private boughtOutMachineRepo: Repository<BoughtoutMachineEntity>,
     ) { }
 
 
@@ -125,6 +125,7 @@ export class MachineService {
                 'parts.is_spm',
                 'parts.is_spare',
                 'parts.days',
+                'parts.image',
                 'part_process.id',
                 'part_process.process_cost',
                 'part_process.process_time',
@@ -332,6 +333,7 @@ export class MachineService {
                 'boughtout.is_machine',
                 'boughtout.is_spm',
                 'boughtout.is_spare',
+                'boughtout.image',
                 'bought_out_suppliers.id',
                 'bought_out_suppliers.cost',
                 'bought_out_suppliers.delivery_time',
@@ -655,6 +657,7 @@ export class MachineService {
                 'sub_assembly.serial_no',
                 'sub_assembly_detail.id',
                 'sub_assembly_detail.qty',
+                'sub_assembly.image',
                 'parts.id',
                 'parts.part_name',
                 'bought_out.id',
@@ -747,6 +750,7 @@ export class MachineService {
                 'main_assembly.serial_no',
                 'main_assembly_detail.id',
                 'main_assembly_detail.qty',
+                'main_assembly.image',
                 'parts.id',
                 'parts.part_name',
                 'bought_out.id',
@@ -1437,6 +1441,7 @@ export class MachineService {
                 'machine.spindles',
                 'machine.min_spindles',
                 'machine.max_spindles',
+                'machine.image',
                 'sub_assembly.id',
                 'sub_assembly.sub_assembly_name',
                 'machine_sub_assembly.id',
@@ -1520,5 +1525,65 @@ export class MachineService {
         const attachments = await this.attachmentRepository.find({where : { parent_id: vendorAttachmentDto.part_id, parent_type: 'part'}})
 
         return { vendor, attachments }
+    }
+
+    async createPartBOImage(fileDto: FileDto) {
+        if(fileDto.type == 'part'){
+            this.partRepository.createQueryBuilder()
+            .update(PartEntity).set({ image: fileDto.image_name })
+            .where('id::VARCHAR=:id', { id: fileDto.type_id })
+            .execute()
+        }else if(fileDto.type == 'bought_out'){
+            this.boughtOutRepository.createQueryBuilder()
+            .update(BoughtOutEntity).set({ image: fileDto.image_name })
+            .where('id::VARCHAR=:id', { id: fileDto.type_id })
+            .execute()
+        }else if(fileDto.type == 'sub_assembly'){
+            this.subAssemblyRepository.createQueryBuilder()
+            .update(SubAssemblyEntity).set({ image: fileDto.image_name })
+            .where('id::VARCHAR=:id', { id: fileDto.type_id })
+            .execute()
+        }else if(fileDto.type == 'main_assembly'){
+            this.mainAssemblyRepository.createQueryBuilder()
+            .update(MainAssemblyEntity).set({ image: fileDto.image_name })
+            .where('id::VARCHAR=:id', { id: fileDto.type_id })
+            .execute()
+        }else if(fileDto.type == 'machine'){
+            this.machineRepository.createQueryBuilder()
+            .update(MachineEntity).set({ image: fileDto.image_name })
+            .where('id::VARCHAR=:id', { id: fileDto.type_id })
+            .execute()
+        }
+        return { message: 'Image uploaded successfully' }
+    }
+
+    async getAssemblyImage(type: string, id:string) {
+        let response: any;
+        if(type == 'part'){
+            response = await this.partRepository.createQueryBuilder()
+            .where('id::VARCHAR=:id', { id })
+            .getOne()
+        }else if(type == 'bought_out'){
+            response = await this.boughtOutRepository.createQueryBuilder()
+            .where('id::VARCHAR=:id', { id })
+            .getOne()
+        }else if(type == 'sub_assembly'){
+            response = await this.subAssemblyRepository.createQueryBuilder()
+            .where('id::VARCHAR=:id', { id })
+            .getOne()
+        }else if(type == 'main_assembly'){
+            response = await this.mainAssemblyRepository.createQueryBuilder()
+            .where('id::VARCHAR=:id', { id })
+            .getOne()
+        }else if(type == 'machine'){
+            response = await this.machineRepository.createQueryBuilder()
+            .where('id::VARCHAR=:id', { id })
+            .getOne()
+        }
+        if(response){
+            return response.image;
+        }else{
+            return ''
+        }        
     }
 }
