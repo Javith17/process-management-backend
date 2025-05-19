@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
+const moment = require('moment');
 import { quotation_terms, template_head } from 'src/common/constants';
 import { Pagination } from 'src/dto/pagination.dto';
 import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
@@ -368,18 +369,80 @@ export class QuotationService {
             ])
             .where(`to_char(machine_quotation.reminder_date, 'dd-MM-YYYY')=:date`, { date })
 
-        if (pagination?.page) {
-            query = query
-                .limit(pagination.limit)
-                .offset((pagination.page - 1) * pagination.limit)
-        }
+        let spare_query = this.sparesRepo.createQueryBuilder('spare_quotation')
+            .leftJoinAndSelect('spare_quotation.machine', 'machine')
+            .leftJoinAndSelect('spare_quotation.customer', 'customer')
+            .leftJoinAndSelect('spare_quotation.user', 'user')
+            .select([
+                'spare_quotation.id',
+                'spare_quotation.quotation_no',
+                'spare_quotation.quotation_date',
+                'spare_quotation.reminder_date',
+                'spare_quotation.qty',
+                'spare_quotation.remarks',
+                'machine.id',
+                'machine.machine_name',
+                'customer.id',
+                'customer.customer_name',
+                'user.id',
+                'user.emp_name',
+                'spare_quotation.initial_cost',
+                'spare_quotation.status',
+                'spare_quotation.spares'
+            ])
+            .where(`to_char(spare_quotation.reminder_date, 'dd-MM-YYYY')=:date`, { date })
+
+        // if (pagination?.page) {
+        //     query = query
+        //         .limit(pagination.limit)
+        //         .offset((pagination.page - 1) * pagination.limit)
+        // }
 
         if (pagination?.search) {
             query = query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
         }
+        if (pagination?.search) {
+            spare_query = spare_query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
+            spare_query = spare_query.orWhere('LOWER(spare_quotation.spares) LIKE :spares', { spares: `%${pagination.search.toLowerCase()}%` })
+        }
 
-        const [list, count] = await query.getManyAndCount()
-        return { list, count }
+        const [machine_quotation, count] = await query.getManyAndCount();
+        const [spare_quotation, spare_count] = await spare_query.getManyAndCount();
+        const list = [];
+        for (const mq of machine_quotation){
+            list.push({
+                id: mq.id,
+                customer_name: mq.customer.customer_name,
+                machine_name: mq.machine.machine_name,
+                user: mq.user.emp_name,
+                initial_cost: mq.initial_cost,
+                quotation_date: mq.quotation_date,
+                quotation_no: mq.quotation_no,
+                reminder_date: mq.reminder_date,
+                qty: mq.qty,
+                status: mq.status,
+                quotation_type: 'Machine',
+                spares: []
+            })
+        }
+        for (const sq of spare_quotation){
+            list.push({
+                id: sq.id,
+                customer_name: sq.customer.customer_name,
+                machine_name: sq.machine.machine_name,
+                user: sq.user.emp_name,
+                initial_cost: sq.initial_cost,
+                quotation_date: sq.quotation_date,
+                quotation_no: sq.quotation_no,
+                reminder_date: sq.reminder_date,
+                qty: sq.qty,
+                status: sq.status,
+                quotation_type: 'Spare',
+                spares: sq.spares
+            })
+        }
+        // const [list, count] = await query.getManyAndCount()
+        return { list, count: count + spare_count }
     }
 
     async vendorQuotationList(pagination: Pagination) {
@@ -1219,7 +1282,7 @@ export class QuotationService {
                 .where('q.id=:id', { id })
                 .getOne()
 
-            quotation.spares.forEach((spare: any) => {
+            quotation.spares.forEach((spare: any, index: number) => {
                 cost += Number(spare.spare_cost)
                 gst = (Number(cost) / 100) * 18
                 total = gst + Number(cost)
@@ -1231,7 +1294,7 @@ export class QuotationService {
                 height:44.5pt'>
                 <p class=MsoNormal><span style='font-size:9.0pt;line-height:106%;font-family:
                 "Aptos Display",sans-serif;mso-ascii-theme-font:major-latin;mso-hansi-theme-font:
-                major-latin'>1.<o:p></o:p></span></p>
+                major-latin'>${index + 1}.<o:p></o:p></span></p>
                 </td>
                 <td width=337 style='width:253.0pt;border:none;border-bottom:solid windowtext 1.0pt;
                 mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt;
@@ -1262,7 +1325,7 @@ export class QuotationService {
         }
 
         let conditions = ''
-        quotation.quotation_terms.forEach((term: string) => {
+        quotation.quotation_terms?.forEach((term: string) => {
             conditions = conditions + `<p class=MsoListParagraphCxSpFirst style='text-indent:-18.0pt;line-height:
             150%;mso-list:l1 level1 lfo2'><![if !supportLists]><span style='font-size:
             9.0pt;line-height:150%;font-family:Symbol;mso-fareast-font-family:Symbol;
@@ -1324,7 +1387,7 @@ export class QuotationService {
         padding:0cm 5.4pt 0cm 5.4pt;height:21.0pt'>
         <p class=MsoNormal><span style='font-size:9.0pt;line-height:106%;font-family:
         "Aptos Display",sans-serif;mso-ascii-theme-font:major-latin;mso-hansi-theme-font:
-        major-latin'>${("0" + quotation.created_at.getDate()).slice(-2)}-${("0" + quotation.created_at.getMonth() + 1).slice(-2)}-${quotation.created_at.getFullYear()}<o:p></o:p></span></p>
+        major-latin'>${moment(new Date(quotation?.created_at)).format('DD-MM-YYYY')}<o:p></o:p></span></p>
         </td>
         </tr>
         <tr style='mso-yfti-irow:2;height:20.0pt'>

@@ -472,6 +472,7 @@ export class OrderService {
                 .leftJoinAndSelect('production_part.order', 'order')
                 .leftJoinAndSelect('order.customer', 'customer')
                 .leftJoinAndSelect('order.quotation', 'quotation')
+                .leftJoinAndSelect('order.spares_quotation', 'spares_quotation')
                 .select([
                     'production_part.id',
                     'production_part.part_id',
@@ -485,6 +486,10 @@ export class OrderService {
                     'quotation.quotation_no',
                     'quotation.qty',
                     'quotation.approved_cost',
+                    'spares_quotation.id',
+                    'spares_quotation.quotation_no',
+                    'spares_quotation.qty',
+                    'spares_quotation.approved_cost',
                     'production_part.part_name',
                     'production_part.vendor_id',
                     'production_part.vendor_name',
@@ -529,6 +534,7 @@ export class OrderService {
                 .leftJoinAndSelect('production_part.order', 'order')
                 .leftJoinAndSelect('order.customer', 'customer')
                 .leftJoinAndSelect('order.quotation', 'quotation')
+                .leftJoinAndSelect('order.spares_quotation', 'spares_quotation')
                 .select([
                     'production_part.part_id',
                     'order.id',
@@ -541,6 +547,10 @@ export class OrderService {
                     'quotation.quotation_no',
                     'quotation.qty',
                     'quotation.approved_cost',
+                    'spares_quotation.id',
+                    'spares_quotation.quotation_no',
+                    'spares_quotation.qty',
+                    'spares_quotation.approved_cost',
                     'production_part.part_name',
                     'production_part.order_qty',
                     'production_part.cost',
@@ -1042,8 +1052,10 @@ export class OrderService {
             .leftJoinAndSelect('orders.machine', 'machine')
             .leftJoinAndSelect('orders.customer', 'customer')
             .leftJoinAndSelect('orders.quotation', 'quotation')
+            .leftJoinAndSelect('orders.spares_quotation', 'spares_quotation')
             .select(['orders.id', 'orders.machine_name', 'machine.id', 'customer.id',
-                'customer.customer_name', 'quotation.id', 'quotation.quotation_no', 'quotation.qty'
+                'customer.customer_name', 'quotation.id', 'quotation.quotation_no', 'quotation.qty',
+                'spares_quotation.id', 'spares_quotation.quotation_no', 'spares_quotation.qty'
             ])
             .where('orders.id=:id', { id: orderId })
             .getOne()

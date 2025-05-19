@@ -70,28 +70,349 @@ export class AssemblyService {
     ) { }
 
     async configureSparesAssemblies(machineId: string, orderId: UUID) {
-        const order = await this.orderRepo.findOne({where: { id: orderId }})
+        const order = await this.orderRepo.createQueryBuilder('order')
+            .leftJoinAndSelect('order.spares_quotation', 'quotation')
+            .where('order.id = :id', { id: orderId })
+            .getOne()
         const quotation = await this.sparesQuotationRepo.findOne({where: { id: order.spares_quotation.id }})
         const spares = quotation.spares
-        console.log("----------")
 
-        // if (sectionDetail.part) {
-        //     section_assembly_part.push({
-        //         section_assembly_id: sectionAssembly.id,
-        //         section_assembly_name: sectionAssembly.section_assembly_name,
-        //         part_id: sectionDetail.part.id,
-        //         part_name: sectionDetail.part.part_name,
-        //         qty: sectionDetail.qty
-        //     })
-        // } else if (sectionDetail.bought_out) {
-        //     section_assembly_bo.push({
-        //         section_assembly_id: sectionAssembly.id,
-        //         section_assembly_name: sectionAssembly.section_assembly_name,
-        //         bought_out_id: sectionDetail.bought_out.id,
-        //         bought_out_name: sectionDetail.bought_out.bought_out_name,
-        //         qty: sectionDetail.qty
-        //     })
-        // }
+        let assembly_sub: any = []
+        let sub_part: any = []
+        let sub_bo: any = []
+
+        const spare_parts: any = []
+        const spare_bos: any = []
+        const spare_sub_assembly: any = []
+        
+        const spare_main_assembly: any = []
+        let main_assembly_sub: any = []
+        let main_assembly_bo: any = []
+        let main_assembly_part: any = []
+        
+        for(const spare of spares){
+             if(spare.spare_type == 'part'){
+                // Parts of spares - insert to the section
+                spare_parts.push({
+                    section_assembly_id: '',
+                    section_assembly_name: '',
+                    part_id: spare.spare_id,
+                    part_name: spare.spare_name,
+                    qty: spare.spare_qty
+                })
+            }else if(spare.spare_type == 'bought_out'){
+                // Boughtout of spares - insert to the section
+                spare_bos.push({
+                    section_assembly_id: '',
+                    section_assembly_name: '',
+                    bought_out_id: spare.spare_id,
+                    bought_out_name: spare.spare_name,
+                    qty: spare.spare_qty
+                })
+            }else if(spare.spare_type == 'sub_assembly'){
+                // Sub Assembly of spares - insert to the section
+                spare_sub_assembly.push({
+                    section_assembly_id: '',
+                    section_assembly_name: '',
+                    sub_assembly_id: spare.spare_id,
+                    sub_assembly_name: spare.spare_name,
+                    qty: spare.spare_qty
+                })
+
+              const spare_sub_assembly_detail =  await this.subAssemblyRepository.createQueryBuilder('sub_assembly')
+                .innerJoinAndSelect('sub_assembly.sub_assembly_detail', 'sub_detail')
+                .leftJoinAndSelect('sub_detail.part', 'part')
+                .leftJoinAndSelect('sub_detail.bought_out', 'bought_out')
+                .select([
+                    'sub_assembly.id',
+                    'sub_assembly.sub_assembly_name',
+                    'sub_detail.id',
+                    'sub_detail.qty',
+                    'part.id',
+                    'part.part_name',
+                    'bought_out.id',
+                    'bought_out.bought_out_name'
+                ])
+                .where('sub_assembly.id=:id', { id: spare.spare_id })
+                .getMany()
+
+                if (assembly_sub.filter((as: any) => as.uid == spare.spare_id)?.length > 0) {
+                    const existing = assembly_sub.filter((asb: any) => asb.uid == `${spare.spare_id}`)[0]
+                    const update = assembly_sub.filter((asb: any) => asb.uid != `${spare.spare_id}`)
+                    update.push({
+                        uid: `${spare.spare_id}`,
+                        sub_assembly_name: spare.spare_name,
+                        qty: Number(spare.spare_qty) + Number(existing.qty)
+                    })
+                    assembly_sub = update
+                } else {
+                    assembly_sub.push({
+                        uid: `${spare.spare_id}`,
+                        sub_assembly_name: spare.spare_name,
+                        qty: spare.spare_qty
+                    })
+                }
+
+                for(const sub of spare_sub_assembly_detail){
+                    for(const detail of sub.sub_assembly_detail){
+                        if (detail.part) {
+                            if (sub_part.filter((sp: any) => sp.uid == `${sub.id}_${detail.part.id}`)?.length == 0) {
+                                sub_part.push({
+                                    uid: `${sub.id}_${detail.part.id}`,
+                                    sub_assembly_id: sub.id,
+                                    sub_assembly_name: sub.sub_assembly_name,
+                                    part_id: detail.part.id,
+                                    part_name: detail.part.part_name,
+                                    qty: detail.qty
+                                })
+                            }
+                        }
+
+                        if (detail.bought_out) {
+                            if (sub_bo.filter((sp: any) => sp.uid == `${sub.id}_${detail.bought_out.id}`)?.length == 0) {
+                                sub_bo.push({
+                                    uid: `${sub.id}_${detail.bought_out.id}`,
+                                    sub_assembly_id: sub.id,
+                                    sub_assembly_name: sub.sub_assembly_name,
+                                    bought_out_id: detail.bought_out.id,
+                                    bought_out_name: detail.bought_out.bought_out_name,
+                                    qty: detail.qty
+                                })
+                            }
+
+                        }
+                    }
+                }
+            }else if(spare.spare_type == 'main_assembly'){
+                // Main Assembly of spares - insert to the section
+                spare_main_assembly.push({
+                    section_assembly_id: '',
+                    section_assembly_name: '',
+                    main_assembly_id: spare.spare_id,
+                    main_assembly_name: spare.spare_name,
+                    qty: spare.spare_qty
+                })
+
+                const mainAssemblyDetail = await this.mainAssemblyRepository.createQueryBuilder('main')
+                .leftJoinAndSelect('main.main_assembly_detail', 'main_detail')
+                .leftJoinAndSelect('main_detail.part', 'main_part')
+                .leftJoinAndSelect('main_detail.bought_out', 'main_bought_out')
+                .leftJoinAndSelect('main_detail.sub_assembly', 'sub_assembly')
+                .leftJoinAndSelect('sub_assembly.sub_assembly_detail', 'sub_detail')
+                .leftJoinAndSelect('sub_detail.part', 'part')
+                .leftJoinAndSelect('sub_detail.bought_out', 'bought_out')
+                .select([
+                    'main.id',
+                    'main.main_assembly_name',
+                    'main_detail.id',
+                    'main_detail.qty',
+                    'main_part.id',
+                    'main_part.part_name',
+                    'main_bought_out.id',
+                    'main_bought_out.bought_out_name',
+                    'sub_assembly.id',
+                    'sub_assembly.sub_assembly_name',
+                    'sub_detail.id',
+                    'sub_detail.qty',
+                    'part.id',
+                    'part.part_name',
+                    'bought_out.id',
+                    'bought_out.bought_out_name'
+                ])
+                .where('main.id=:id', { id: spare.spare_id })
+                .getMany();
+
+                for(const detail of mainAssemblyDetail){
+                    for(const main_detail of detail.main_assembly_detail){
+                        if (main_detail.part) {
+                            main_assembly_part.push({
+                                main_assembly_id: detail.id,
+                                main_assembly_name: detail.main_assembly_name,
+                                part_id: main_detail.part.id,
+                                part_name: main_detail.part.part_name,
+                                qty: spare.spare_qty * main_detail.qty,
+                                main_assembly_qty: spare.spare_qty
+                            })
+                        }
+                        if (main_detail.bought_out) {
+                            main_assembly_bo.push({
+                                main_assembly_id: detail.id,
+                                main_assembly_name: detail.main_assembly_name,
+                                bought_out_id: main_detail.bought_out.id,
+                                bought_out_name: main_detail.bought_out.bought_out_name,
+                                qty: spare.spare_qty * main_detail.qty,
+                                main_assembly_qty: spare.spare_qty
+                            })
+                        }
+                        if (main_detail.sub_assembly) {
+                            main_assembly_sub.push({
+                                main_assembly_id: detail.id,
+                                main_assembly_name: detail.main_assembly_name,
+                                sub_assembly_id: main_detail.sub_assembly.id,
+                                sub_assembly_name: main_detail.sub_assembly.sub_assembly_name,
+                                qty: spare.spare_qty * main_detail.qty,
+                                main_assembly_qty: spare.spare_qty
+                            })
+
+                            main_detail.sub_assembly.sub_assembly_detail.forEach((sb_detail: any) => {
+                                if (sb_detail.part) {
+                                    if (sub_part.filter((sp: any) => sp.uid == `${main_detail.sub_assembly.id}_${sb_detail.part.id}`)?.length == 0) {
+                                        sub_part.push({
+                                            uid: `${main_detail.sub_assembly.id}_${sb_detail.part.id}`,
+                                            sub_assembly_id: main_detail.sub_assembly.id,
+                                            sub_assembly_name: main_detail.sub_assembly.sub_assembly_name,
+                                            part_id: sb_detail.part.id,
+                                            part_name: sb_detail.part.part_name,
+                                            qty: sb_detail.qty
+                                        })
+                                    }
+                                }
+
+                                if (sb_detail.bought_out) {
+                                    if (sub_bo.filter((sp: any) => sp.uid == `${main_detail.sub_assembly.id}_${sb_detail.bought_out.id}`)?.length == 0) {
+                                        sub_bo.push({
+                                            uid: `${main_detail.sub_assembly.id}_${sb_detail.bought_out.id}`,
+                                            sub_assembly_id: main_detail.sub_assembly.id,
+                                            sub_assembly_name: main_detail.sub_assembly.sub_assembly_name,
+                                            bought_out_id: sb_detail.bought_out.id,
+                                            bought_out_name: sb_detail.bought_out.bought_out_name,
+                                            qty: sb_detail.qty
+                                        })
+                                    }
+
+                                }
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+       const subAssemblyConsolidatedQty = {};
+
+        await Object.keys(subAssemblyConsolidatedQty).forEach(async (key: string) => {
+            if (assembly_sub.filter((as: any) => as.uid == key.split('~')[0]).length == 0) {
+                assembly_sub.push({
+                    uid: key.split('~')[0],
+                    sub_assembly_name: key.split('~')[1],
+                    qty: subAssemblyConsolidatedQty[key]
+                })
+            } else {
+                const existing = assembly_sub.filter((as: any) => as.uid == key.split('~')[0])[0]
+                assembly_sub = assembly_sub.filter((as: any) => as.uid != key.split('~')[0])
+                assembly_sub.push({
+                    uid: key.split('~')[0],
+                    sub_assembly_name: key.split('~')[1],
+                    qty: subAssemblyConsolidatedQty[key] + existing.qty
+                })
+            }
+        })
+
+        sub_part.forEach((sub: any) => {
+            this.assemblySubRepo.save({
+                sub_assembly_id: sub.sub_assembly_id,
+                sub_assembly_name: sub.sub_assembly_name,
+                part_id: sub.part_id,
+                part_name: sub.part_name,
+                qty: sub.qty * assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
+                sub_assembly_qty:
+                    assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
+                order
+            })
+        })
+
+        sub_bo.forEach((sub: any) => {
+            this.assemblySubRepo.save({
+                sub_assembly_id: sub.sub_assembly_id,
+                sub_assembly_name: sub.sub_assembly_name,
+                bought_out_id: sub.bought_out_id,
+                bought_out_name: sub.bought_out_name,
+                qty: sub.qty * assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
+                sub_assembly_qty: assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
+                order
+            })
+        })
+
+        main_assembly_part.forEach((sub: any) => {
+            this.assemblyMainRepo.save({
+                main_assembly_id: sub.main_assembly_id,
+                main_assembly_name: sub.main_assembly_name,
+                part_id: sub.part_id,
+                part_name: sub.part_name,
+                qty: sub.qty,
+                main_assembly_qty: sub.main_assembly_qty,
+                order
+            })
+        })
+
+        main_assembly_bo.forEach((sub: any) => {
+            this.assemblyMainRepo.save({
+                main_assembly_id: sub.main_assembly_id,
+                main_assembly_name: sub.main_assembly_name,
+                bought_out_id: sub.bought_out_id,
+                bought_out_name: sub.bought_out_name,
+                qty: sub.qty,
+                main_assembly_qty: sub.main_assembly_qty,
+                order
+            })
+        })
+
+        main_assembly_sub.forEach((sub: any) => {
+            this.assemblyMainRepo.save({
+                main_assembly_id: sub.main_assembly_id,
+                main_assembly_name: sub.main_assembly_name,
+                sub_assembly_id: sub.sub_assembly_id,
+                sub_assembly_name: sub.sub_assembly_name,
+                qty: sub.qty,
+                main_assembly_qty: sub.main_assembly_qty,
+                order
+            })
+        })
+
+        spare_parts.forEach((sub: any) => {
+            this.assemblySectionRepo.save({
+                part_id: sub.part_id,
+                part_name: sub.part_name,
+                qty: sub.qty,
+                order
+            })
+        })
+
+        spare_bos.forEach((sub: any) => {
+            this.assemblySectionRepo.save({
+                bought_out_id: sub.bought_out_id,
+                bought_out_name: sub.bought_out_name,
+                qty: sub.qty,
+                order
+            })
+        })
+
+        spare_main_assembly.forEach((sub: any) => {
+            this.assemblySectionRepo.save({
+                main_assembly_id: sub.main_assembly_id,
+                main_assembly_name: sub.main_assembly_name,
+                qty: sub.qty,
+                order
+            })
+        })
+
+        spare_sub_assembly.forEach((sub: any) => {
+            this.assemblySectionRepo.save({
+                sub_assembly_id: sub.sub_assembly_id,
+                sub_assembly_name: sub.sub_assembly_name,
+                qty: sub.qty,
+                order
+            })
+        })
+        
+        await this.orderRepo.createQueryBuilder()
+            .update(OrderConfirmationEntity)
+            .set({
+                status: 'In-Progress'
+            })
+            .where('id=:id', { id: orderId })
+            .execute()
+        return { messag: 'Assembly configuration completed successfully' }
     }
 
     async configureMachineAssemblies(machineId: string, orderId: UUID) {
