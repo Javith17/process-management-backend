@@ -17,7 +17,7 @@ export class AuthService {
             .select(['user.id','user.emp_name','user.emp_code', 'roles.role_code','roles.role_name', 'roles.screens'])
             .innerJoinAndSelect(RoleEntity, 'roles', 'user.role_id = roles.id::text')
             .where('user.emp_code=:empCode', {empCode:signInDto.emp_code})
-            .andWhere('password=:password',{password: signInDto.password})
+            .andWhere('user.password=:password',{password: signInDto.password})
             .getRawOne()
             
         if(user){
