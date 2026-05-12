@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"empCode"  character varying NOT NULL,
     "password" character varying NOT NULL,
     isActive boolean DEFAULT true NOT NULL,
+    "details" json NULL,
+    "insurance_details" json NULL,
+    "salary" character varying NULL,
+    "category" character varying NULL,
+    "notification_token" character varying NULL
 	roleId uuid,
     createdAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updatedAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -68,6 +73,58 @@ CREATE TABLE IF NOT EXISTS "suppliers" (
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "enquiries" (
+    "id" uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+	"customer_name"  character varying NOT NULL,
+	"machine_name"  character varying NOT NULL,
+	"existing_machine_id"  character varying NULL,
+	"existing_customer_id"  character varying NULL,
+    "contact_no" character varying NOT NULL,
+    "address" json NULL,
+    "gst_no" character varying NULL,
+	"enquiry_resource" character varying NULL,
+	"enquiry_status" character varying NULL,
+	"level1_user" uuid NULL,
+	"level2_user" uuid NULL,
+  "approval_detail" json NULL,
+  "remarks" character varying NULL,
+    createdAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT "fk_level1_user" FOREIGN KEY(level1_user) REFERENCES users(id),
+	CONSTRAINT "fk_level2_user" FOREIGN KEY(level2_user) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS "attendance" (
+    "id" uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+	"user_id"  uuid NOT NULL,
+	"emp_code"  character varying NOT NULL,
+	"attendance_date"  character varying NOT NULL,
+    "check_in_time" character varying NULL,
+	"check_out_time" character varying NULL,
+	"total_working_hrs" character varying NULL,
+	"location_details" jsonb NULL,
+	"is_break" boolean DEFAULT false NOT NULL, 
+	"break_time" character varying NULL,
+	"total_break_hrs" character varying NULL,
+	"is_leave" boolean DEFAULT false NOT NULL,
+    createdAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT "fk_user" FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS "leave_request" (
+    "id" uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+	"user_id"  uuid NOT NULL,
+	"emp_code"  character varying NOT NULL,
+	"leave_date"  character varying NOT NULL,
+	"description"  character varying NOT NULL,
+	"status"  character varying NULL,
+	"remarks"  character varying NULL,
+    createdAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedAt timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT "fk_user" FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
 INSERT INTO public.roles(
@@ -396,3 +453,16 @@ insert into roles(is_active,role_name,role_code,screens) values
     ]
   }
 ]');
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS details json null;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS insurance_details json null;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS salary character varying null;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS category character varying null;
+ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS approval_detail json NULL;
+
+ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS quotation_terms jsonb null;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_token character varying NULL;
+ALTER TABLE machine_quotation ADD COLUMN IF NOT EXISTS revised_history jsonb NULL;
+ALTER TABLE machine_quotation ADD COLUMN IF NOT EXISTS quotation_version int NOT NULL DEFAULT 1;
+ALTER TABLE machines ADD COLUMN IF NOT EXISTS video_url jsonb NULL;
+ALTER TABLE machines ADD COLUMN IF NOT EXISTS images jsonb NULL;
