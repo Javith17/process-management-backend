@@ -16,4 +16,19 @@ export abstract class UserEntity extends BaseEntity{
 
     @Column()
     role_id: UUID;
+
+    @Column({ nullable:true})
+    category: string;
+
+    @Column({ nullable:true, type: 'simple-json'})
+    details: any;
+
+    @Column({ nullable:true, type: 'simple-json'})
+    insurance_details: any;
+
+    @Column({ nullable:true})
+    salary: string;
+
+    @Column({ nullable:true})
+    notification_token: string;
 }

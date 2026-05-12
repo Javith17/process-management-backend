@@ -120,6 +120,10 @@ export class CreateMachine {
     @IsNumber()
     min_spindles:number;
 
+    @IsOptional()
+    @IsArray()
+    video_urls:string[];
+
     @IsArray()
     sub_assembly: CreateMachineSubAssembly[]
 
@@ -293,6 +297,17 @@ export class FileDto {
 
     @IsString()
     image_name: string;
+}
+
+export class AttendanceImageDto {
+    @IsString()
+    user_id: string;
+
+    @IsString()
+    attendance_date: string;
+
+    @IsArray()
+    file_list: Array<FileDetailsDto>;
 }
 
 export class FileDetailsDto {

@@ -45,17 +45,21 @@ import { AssemblyMachineSubEntity } from './model/assembly_machine_sub.entity';
 import { AssemblyMachineMainEntity } from './model/assembly_machine_main.entity';
 import { AssemblyMachineSectionEntity } from './model/assembly_machine_section.entity';
 import { SparesQuotationEntity } from './model/spares_quotation.entity';
+import { EnquiryEntity } from './model/enquiry.entity';
+import { FirebaseProvider } from './common/firebase.provider';
+import { AttendanceEntity } from './model/attendance.entity';
+import { LeaveRequestEntity } from './model/leave_request.entity';
 ConfigModule.forRoot()
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.PG_HOST,
-      port: Number(process.env.PG_PORT),
-      username: process.env.PG_USERNAME,
-      password: process.env.PG_PASSWORD,
-      database: process.env.PG_DB,
+      host: 'localhost', //process.env.PG_HOST,
+      port: 5432, //Number(process.env.PG_PORT),
+      username: 'postgres', //process.env.PG_USERNAME,
+      password: 'root', //process.env.PG_PASSWORD,
+      database: 'process_mgnt_1', //process.env.PG_DB,
       entities: [ UserEntity, RoleEntity, ProcessEntity, VendorEntity, VendorProcessEntity, 
         SupplierEntity, CustomerEntity, PartEntity, PartProcessEntity, PartProcessVendorEntity,
         BoughtOutEntity, BoughtOutSuppliertEntity, MachineEntity, SubAssemblyEntity, SubAssemblyDetailEntity,
@@ -64,7 +68,7 @@ ConfigModule.forRoot()
         OrderConfirmationEntity, ProductionMachinePartEntity, VendorQuotationEntity, SupplierQuotationEntity,
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
         PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
-        SparesQuotationEntity],
+        SparesQuotationEntity, EnquiryEntity, AttendanceEntity, LeaveRequestEntity],
       synchronize: true,
     }),
     MulterModule.register({
@@ -73,7 +77,7 @@ ConfigModule.forRoot()
     ConfigModule.forRoot({
       isGlobal:true
     }),
-    AdminModule, AuthModule, MachineModule,
+    AdminModule, AuthModule, MachineModule, 
     UserModule, QuotationModule, OrderModule, AssemblyModule]
 })
 export class AppModule {}

@@ -65,4 +65,10 @@ export abstract class MachineQuotationEntity extends BaseEntity {
 
     @Column({ nullable: true, type: 'simple-json' })
     quotation_terms: string[]
+
+    @Column({ nullable: true, type: 'simple-json'  })
+    revised_history: any;
+
+    @Column({ nullable: false, default: 1 })
+    quotation_version: number;
 }

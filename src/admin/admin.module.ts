@@ -15,12 +15,17 @@ import { PartEntity } from "src/model/part.entity";
 import { ProductionMachinePartEntity } from "src/model/production_machine_part.entity";
 import { ProductionMachineBoughtoutEntity } from "src/model/production_machine_boughtout.entity";
 import { OrderConfirmationEntity } from "src/model/order_confirmation.entity";
+import { EnquiryEntity } from "src/model/enquiry.entity";
+import { QuotationModule } from "src/quotation/quotation.module";
+import { NotificationService } from "src/common/notification.service";
+import { FirebaseProvider } from "src/common/firebase.provider";
 
 @Module({
     imports: [TypeOrmModule.forFeature([RoleEntity, UserEntity, ProcessEntity, VendorEntity, 
         VendorProcessEntity, SupplierEntity, CustomerEntity, PartProcessEntity, PartProcessVendorEntity,
-        PartEntity, ProductionMachinePartEntity, ProductionMachineBoughtoutEntity, OrderConfirmationEntity])],
+        PartEntity, ProductionMachinePartEntity, ProductionMachineBoughtoutEntity, OrderConfirmationEntity,
+        EnquiryEntity]), QuotationModule],
     controllers: [AdminController],
-    providers: [AdminService]
+    providers: [AdminService, FirebaseProvider, NotificationService]
   })
   export class AdminModule {}

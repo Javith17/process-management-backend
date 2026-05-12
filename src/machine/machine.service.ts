@@ -1255,10 +1255,11 @@ export class MachineService {
                 side_type: createMachineDto.side_type,
                 spindles: createMachineDto.spindles,
                 min_spindles: createMachineDto.min_spindles,
-                max_spindles: createMachineDto.max_spindles
+                max_spindles: createMachineDto.max_spindles,
+                video_urls: createMachineDto.video_urls
             })
 
-            return { message: 'Machine created successfully' }
+            return { message: 'Machine created successfully', id: machineObj.id }
         } else {
             const existingMachine = await this.machineRepository.find({ select: ['id', 'machine_name'], where: { machine_name: createMachineDto.machine_name } })
             if (existingMachine.length == 0 || existingMachine[0].id.includes(createMachineDto.id)) {
@@ -1270,11 +1271,12 @@ export class MachineService {
                         side_type: createMachineDto.side_type,
                         spindles: createMachineDto.spindles,
                         min_spindles: createMachineDto.min_spindles,
-                        max_spindles: createMachineDto.max_spindles
+                        max_spindles: createMachineDto.max_spindles,
+                        video_urls: createMachineDto.video_urls
                     })
                     .where('id=:id', { id: createMachineDto.id })
                     .execute()
-                return { message: 'Machine updated successfully' }
+                return { message: 'Machine updated successfully', id: createMachineDto.id }
             } else {
                 return { message: 'Machine name already exists' }
             }
@@ -1402,7 +1404,8 @@ export class MachineService {
                 'machine.side_type',
                 'machine.spindles',
                 'machine.min_spindles',
-                'machine.max_spindles'
+                'machine.max_spindles',
+                'machine.video_urls'
             ])
 
         if (pagination?.page) {
@@ -1414,7 +1417,7 @@ export class MachineService {
         if (pagination?.search) {
             query = query.andWhere('LOWER(machine.machine_name) LIKE :machineName', { machineName: `%${pagination.search.toLowerCase()}%` })
         }
-
+        
         const [list, count] = await query.getManyAndCount()
         return { list, count }
     }
@@ -1548,12 +1551,13 @@ export class MachineService {
             .update(MainAssemblyEntity).set({ image: fileDto.image_name })
             .where('id::VARCHAR=:id', { id: fileDto.type_id })
             .execute()
-        }else if(fileDto.type == 'machine'){
-            this.machineRepository.createQueryBuilder()
-            .update(MachineEntity).set({ image: fileDto.image_name })
-            .where('id::VARCHAR=:id', { id: fileDto.type_id })
-            .execute()
         }
+        // else if(fileDto.type == 'machine'){
+        //     this.machineRepository.createQueryBuilder()
+        //     .update(MachineEntity).set({ image: fileDto.image_name })
+        //     .where('id::VARCHAR=:id', { id: fileDto.type_id })
+        //     .execute()
+        // }
         return { message: 'Image uploaded successfully' }
     }
 
@@ -1585,5 +1589,29 @@ export class MachineService {
         }else{
             return ''
         }        
+    }
+
+    async getMachineAttachmentLinks(machineId: string) {
+        try {
+            let urls: string[] = [];
+            const machine = await this.machineRepository.findOne({where: { id: machineId as any }});
+            if (machine?.video_urls?.length > 0) {
+                urls = machine?.video_urls;
+            }
+            const attachments = await this.attachmentRepository.find({ where: { parent_id: machineId, parent_type: 'machine' }});
+            attachments?.forEach((attachment) => {
+                urls.push(`http://192.168.0.249:3000/machine/loadAttachment/${attachment.file_name}`);
+            })
+            return {
+                links: urls
+            }
+        } catch(err: any) {
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
     }
 }

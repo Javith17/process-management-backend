@@ -34,7 +34,8 @@ import { MainAssemblyEntity } from "src/model/main_assembly.entity";
       ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity, SparesQuotationEntity,
       MainAssemblyEntity ])],
     controllers: [QuotationController],
-    providers: [QuotationService]
+    providers: [QuotationService],
+    exports: [QuotationService]
   })
   export class QuotationModule {}
   
