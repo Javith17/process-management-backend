@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Res, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query, Res, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UUID } from 'crypto';
 import { Response } from 'express';
@@ -183,7 +183,16 @@ export class MachineController {
 
     @Get('/loadAttachment/:attachmentName')
     getAttachment(@Param('attachmentName') attachmentName:string,@Res() res: Response){
-        return res.sendFile(join(process.cwd(), 'uploads/' + attachmentName))
+        try {
+            return res.sendFile(join(process.cwd(), 'uploads/' + attachmentName))
+        } catch (err: any) {
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
     }
 
     @Post('/updatePart')
@@ -232,5 +241,10 @@ export class MachineController {
         }else {
             return 'No Image'
         }
+    }
+
+    @Get('/machineAttachmentLinks/:machine_id')
+    async getMachineAttachmentLinks(@Param('machine_id') machineId: string) {
+        return this.machineService.getMachineAttachmentLinks(machineId);
     }
 }
