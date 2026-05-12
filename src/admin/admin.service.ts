@@ -1,13 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
-import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
+import { quotation_terms } from 'src/common/constants';
+import { NotificationService } from 'src/common/notification.service';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateEnquiryStatus, UpdateNotificationToken, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
 import { CustomerEntity } from 'src/model/customer.entity';
-import { MachineEntity } from 'src/model/machine.entity';
-import { MachineQuotationEntity } from 'src/model/machine_quotation.entity';
+import { EnquiryEntity } from 'src/model/enquiry.entity';
 import { OrderConfirmationEntity } from 'src/model/order_confirmation.entity';
 import { PartEntity } from 'src/model/part.entity';
 import { PartProcessEntity } from 'src/model/part_process.entity';
@@ -20,6 +21,7 @@ import { SupplierEntity } from 'src/model/supplier.entity';
 import { UserEntity } from 'src/model/user.entity';
 import { VendorEntity } from 'src/model/vendor.entity';
 import { VendorProcessEntity } from 'src/model/vendorProcess.entity';
+import { QuotationService } from 'src/quotation/quotation.service';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -38,13 +40,34 @@ export class AdminService {
         @InjectRepository(PartEntity) private partsRepo: Repository<PartEntity>,
         @InjectRepository(ProductionMachinePartEntity) private vendorPartRepo: Repository<ProductionMachinePartEntity>,
         @InjectRepository(ProductionMachineBoughtoutEntity) private supplierBORepo: Repository<ProductionMachineBoughtoutEntity>,
-        @InjectRepository(OrderConfirmationEntity) private orderConfimationRepo: Repository<OrderConfirmationEntity>
+        @InjectRepository(OrderConfirmationEntity) private orderConfimationRepo: Repository<OrderConfirmationEntity>,
+        @InjectRepository(EnquiryEntity) private enquiryRepo: Repository<EnquiryEntity>,
+        private quotationService: QuotationService,
+        private notificationService: NotificationService
     ) { }
 
     async createRole(roleDto: CreateRole) {
-        const newRole = await this.roleRepository.create(roleDto)
+        const role = await this.roleRepository.findOne({ where: { role_name: roleDto.role_name }});
+        if (role) {
+            return { message: "Role name already exists" }
+        }
+        const newRole = await this.roleRepository.create({
+            role_code: roleDto.role_code,
+            role_name: roleDto.role_name,
+            screens: roleDto.screens
+        })
         await this.roleRepository.save(newRole)
         return newRole
+    }
+
+     async updateRole(roleDto: CreateRole) {
+        const role = await this.roleRepository.findOne({ where: { id: roleDto.id }});
+        if (!role) {
+            return { message: "Invalid Role" }
+        }
+        role.screens = roleDto.screens;
+        await this.roleRepository.update(roleDto.id, role);
+        return { roleId: role.id, message: "Role updated successfully" }
     }
 
     async getAllRoles(pagination: Pagination) {
@@ -90,7 +113,7 @@ export class AdminService {
 
     async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
-            .select(['user.id', 'user.emp_code', 'user.emp_name'])
+            .select(['user.id', 'user.emp_code', 'user.emp_name', 'user.category', 'user.details', 'user.salary', 'user.insurance_details'])
             .where({ is_active: true })
 
         if (pagination?.page) {
@@ -110,7 +133,7 @@ export class AdminService {
     }
 
     async getUserById(id: UUID) {
-        const user = await this.userRepository.find({ select: ['id', 'emp_code', 'emp_name', 'role_id'], where: { is_active: true, id: id } })
+        const user = await this.userRepository.find({ select: ['id', 'emp_code', 'emp_name', 'role_id', 'category', 'details', 'insurance_details', 'salary'], where: { is_active: true, id: id } })
         if (user.length > 0) {
             return { user: user.at(0) };
         }
@@ -346,12 +369,12 @@ export class AdminService {
             const [list, count] = await query.getManyAndCount()
             return { list, count }
 
-        } catch (err) {
+        } catch (err: any) {
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
-                error: err.message,
+                error: err?.message,
             }, HttpStatus.FORBIDDEN, {
-                cause: err.message
+                cause: err?.message
             });
         }
     }
@@ -445,8 +468,8 @@ export class AdminService {
         if (customer.length > 0) {
             return { message: "Customer already exists" }
         }
-        await this.customerRepository.save(customerDto)
-        return { message: "Customer created successfully" }
+        let newCustomer = await this.customerRepository.save(customerDto);
+        return { message: "Customer created successfully", id: newCustomer.id }
     }
 
     async getCustomers(input: { page?: number, limit?: number, search?: string }) {
@@ -562,5 +585,199 @@ export class AdminService {
 
         const [list, count] = await query.getManyAndCount()
         return { list, count };
+    }
+
+    async createEnquiry(enquiryDto: CreateEnquiry) {
+        const enquiry = await this.enquiryRepo.find({ where: { customer_name: enquiryDto.customer_name, enquiry_status: 'Open' } });
+        if (enquiry?.length > 0) {
+            return { message: "Enquiry already exists" }
+        }
+
+        const newEnquiry = await this.enquiryRepo.create({
+            ...enquiryDto,
+            level1_user: { id: enquiryDto.level1_user },
+            quotation_terms: quotation_terms,
+            enquiry_status: 'Open'
+        })
+        await this.enquiryRepo.save(newEnquiry)
+        this.notificationService.send([], 'New Enquiry', `New enquiry - ${enquiryDto.customer_name}`, {
+            id: newEnquiry.id,
+            type: 'enquiry'
+        });
+        return { message: "Enquiry created successfully" }
+    }
+
+    async getEnquiries(input: { page?: number, limit?: number, search?: string, status?: string, user?: string }) {
+        let query = this.enquiryRepo.createQueryBuilder('enquiry')
+            .select(['enquiry.id', 'enquiry.machine_name', 'enquiry.customer_name',
+                'enquiry.contact_no', 'enquiry.address', 'enquiry.enquiry_resource',
+                'enquiry.gst_no', 'enquiry.remarks', 'level1_user.emp_name', 'level2_user.emp_name',
+                'level2_user.id', 'enquiry.quotation_terms'])
+            .innerJoin('enquiry.level1_user', 'level1_user')
+            .leftJoin('enquiry.level2_user', 'level2_user')
+
+        if (input?.page) {
+            query = query
+                .limit(input.limit)
+                .offset((input.page - 1) * input.limit)
+        }
+
+        if (input?.status) {
+            query = query.andWhere('LOWER(enquiry.enquiry_status)=:status', { status: input.status.toLowerCase() })
+        }
+
+        if (input?.search) {
+            query = query.andWhere('LOWER(enquiry.customer_name) LIKE :name', { name: `%${input.search.toLowerCase()}%` })
+        }
+
+        if (input?.user) {
+            query = query.andWhere('enquiry.level2_user::VARCHAR =:user', { user: input.user })
+        }
+
+        const [list, count] = await query.getManyAndCount()
+        return {
+            list, count
+        }
+    }
+
+    async updateEnquiryStatus(cmd: UpdateEnquiryStatus) {
+        try {
+            const enquiry = await this.enquiryRepo.createQueryBuilder('enquiry')
+                .innerJoinAndSelect('enquiry.level2_user', 'followup_user')
+                .innerJoinAndSelect('enquiry.level1_user', 'created_user')
+                .where("enquiry.id =:enquiry_id", { enquiry_id: cmd.enquiry_id })
+                .getOne();
+
+            if (!enquiry) {
+                throw new HttpException("No enquiry found", HttpStatus.NOT_FOUND)
+            }
+            if (cmd.status == 'Start') {
+                const user2 = await this.userRepository.findOne({ where: { id: cmd.level2_user } });
+                await this.enquiryRepo.createQueryBuilder()
+                    .update(EnquiryEntity).set({ level2_user: user2, enquiry_status: 'In Progress' })
+                    .where('id=:id', { id: cmd.enquiry_id })
+                    .execute()
+                this.notificationService.send([], 'Follow-up Started', `${user2.emp_name} started enquiry for ${enquiry.customer_name} `, {
+                    id: cmd.enquiry_id,
+                    type: 'followup'
+                });
+            } else if (cmd.status == 'Reject') {
+                await this.enquiryRepo.createQueryBuilder()
+                    .update(EnquiryEntity).set({ enquiry_status: 'Rejected', remarks: cmd.remarks })
+                    .where('id=:id', { id: cmd.enquiry_id })
+                    .execute()
+                this.notificationService.send([], 'Enquiry Rejected', `Rejected enquiry for ${enquiry.customer_name} `, {
+                    id: cmd.enquiry_id,
+                    type: 'enquiry_rejected'
+                });
+            } else if (cmd.status == 'Approve') {
+                const approval_detail = {
+                    quotation_date: cmd.quotation_date,
+                    reminder_date: cmd.reminder_date,
+                    cost: cmd.cost,
+                    quantity: cmd.qty,
+                    approved_by: cmd.approved_by
+                }
+                await this.enquiryRepo.createQueryBuilder()
+                    .update(EnquiryEntity).set({ enquiry_status: 'Approved', approval_detail: approval_detail, quotation_terms: cmd.quotation_terms })
+                    .where('id=:id', { id: cmd.enquiry_id })
+                    .execute()
+
+                let existing_customer_id;
+                if (enquiry.existing_customer_id) {
+                    existing_customer_id = enquiry.existing_customer_id;
+                } else {
+                    const customer = await this.createNewCustomer({
+                        customer_address1: enquiry.address?.address_1,
+                        customer_name: enquiry.customer_name,
+                        customer_city: enquiry.address?.city,
+                        customer_state: enquiry.address?.state,
+                        customer_pincode: enquiry.address?.postal_code,
+                        customer_mobile_no1: enquiry.contact_no,
+                        customer_gst: enquiry.gst_no,
+                        is_machine:  true
+                    })
+                    existing_customer_id = customer.id;
+                }
+                
+                const quotation = await this.quotationService.createMachineQuotation({
+                    quotation_date: cmd.quotation_date,
+                    reminder_date: cmd.reminder_date,
+                    qty: cmd.qty,
+                    machine_id: enquiry.existing_machine_id as any,
+                    customer_id: existing_customer_id as any,
+                    user_id: enquiry.level2_user.id as any,
+                    created_by: enquiry.level1_user.id as any,
+                    remarks: cmd.remarks,
+                    quotation_terms: cmd.quotation_terms,
+                    cost: cmd.cost,
+                    type: 'Add',
+                    status: 'Draft'
+                });
+                this.notificationService.send([], 'New quotation', `Quotation created for ${enquiry.customer_name} `, {
+                    id: quotation.id,
+                    type: 'new_quotation'
+                });
+            }
+        } catch (err: any) {
+            console.log("==========", err.stack);
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
+    }
+
+    async updateNotificationToken(cmd: UpdateNotificationToken) {
+        try {
+            const user = await this.userRepository.findOne({ where: { id: cmd.user_id }});
+            if(user && cmd.notification_token) {
+                await this.userRepository.createQueryBuilder()
+                .update(UserEntity).set({ notification_token: cmd.notification_token })
+                .where('id::VARCHAR=:id', { id: cmd.user_id })
+                .execute();
+            }
+            return { message: 'Updated' };
+        } catch(err: any) {
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
+    }
+
+    async getMarketingDashboardData(cmd: UpdateNotificationToken): Promise<{ enquiryCount: string, followUpCount: string, quotationCount: string }> {
+        try {
+            const enquiryCount = (await this.enquiryRepo.findAndCount({where: { enquiry_status: 'Open' }}))?.[1];
+            const followUps = await this.enquiryRepo.createQueryBuilder('enquiry')
+                .innerJoinAndSelect('enquiry.level2_user', 'user')
+                .where("enquiry.enquiry_status='In Progress'")
+                .andWhere("user.id =:userId", { userId: cmd.user_id })
+                .getManyAndCount();
+            const followUpCount = followUps?.[1];
+            const quotationRepo = await this.quotationService.getQuotationRepo();
+            const draftQuotations = await quotationRepo.createQueryBuilder('quotation')
+                .innerJoinAndSelect('quotation.user', 'user')
+                .where("quotation.status='Draft'")
+                .andWhere("user.id =:followUpUserId", { followUpUserId: cmd.user_id })
+                .getManyAndCount();
+            const quotationCount = draftQuotations?.[1];
+            return {
+                enquiryCount: enquiryCount?.toString() || '0',
+                followUpCount: followUpCount?.toString() || '0',
+                quotationCount: quotationCount?.toString() || '0',
+            }
+        } catch(err:any) {
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
     }
 }

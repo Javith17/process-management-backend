@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, UseIntercept
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateEnquiryStatus, UpdateNotificationToken, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { AdminService } from './admin.service';
 
@@ -20,6 +20,11 @@ export class AdminController {
     @Post('/createRole')
     createRole(@Body() createRole: CreateRole){
         return this.adminService.createRole(createRole);
+    }
+
+    @Put('/updateRole')
+    updateRole(@Body() updateRole: CreateRole){
+        return this.adminService.updateRole(updateRole);
     }
 
     @Get('/roles')
@@ -135,5 +140,30 @@ export class AdminController {
     @Get('/customersHistory')
     getCUstomersHistory(@Query() pagination: Pagination){
         return this.adminService.getCustomerHistory(pagination)
+    }
+
+    @Post('/createEnquiry')
+    createEnquiry(@Body() createEnquiry: CreateEnquiry){
+        return this.adminService.createEnquiry(createEnquiry);
+    }
+
+    @Get('/enquiries')
+    getEnquiries(@Query() pagination: Pagination){
+        return this.adminService.getEnquiries(pagination);
+    }
+
+    @Post('/updateEnquiryStatus')
+    updateEnquiriesStatus(@Body() cmd: UpdateEnquiryStatus){
+        return this.adminService.updateEnquiryStatus(cmd);
+    }
+
+    @Post('/updateNotificationToken')
+    updateNotificationToken(@Body() cmd: UpdateNotificationToken){
+        return this.adminService.updateNotificationToken(cmd);
+    }
+
+    @Post('/marketingDashboard')
+    marketingDashboardData(@Body() cmd: UpdateNotificationToken){
+        return this.adminService.getMarketingDashboardData(cmd);
     }
 }
