@@ -19,6 +19,12 @@ export class Pagination{
 
     @IsArray()
     search_list: string[]
+
+    @IsString()
+    status: string;
+
+    @IsString()
+    user?: string;
 }
 
 export class CheckNameDto {

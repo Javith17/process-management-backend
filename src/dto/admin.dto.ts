@@ -1,109 +1,170 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsArray, IsBoolean, IsDateString, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsUUID } from "class-validator";
 import { UUID } from "crypto";
 
-export class CreateRole{
+export class CreateRole {
     @IsString()
-    @IsNotEmpty()
-    role_name:string;
+    @IsOptional()
+    id: UUID;
 
     @IsString()
-    role_code:string;
+    @IsNotEmpty()
+    role_name: string;
+
+    @IsString()
+    role_code: string;
 
     @IsArray()
     screens: [];
 }
 
 
-export class CreateUser{
+export class CreateUser {
     @IsString()
     @IsNotEmpty()
-    empName:string;
+    empName: string;
 
     @IsString()
     @IsNotEmpty()
-    empCode:string;
+    empCode: string;
 
     @IsString()
-    password:string;
+    password: string;
 
     @IsUUID()
-    roleId:UUID;
-}
-
-export class UpdateUserPassword{
-    @IsString()
-    @IsNotEmpty()
-    userId:UUID;
-
-    @IsNotEmpty()
-    @IsString()
-    password:string;
-}
-
-export class CreateProcess{
-    @IsString()
-    @IsNotEmpty()
-    process_name:string;
-}
-
-export class CreateVendor{
-    @IsString()
-    vendor_id: UUID;
-    
-    @IsString()
-    @IsNotEmpty()
-    vendor_name:string;
+    roleId: UUID;
 
     @IsString()
-    @IsNotEmpty()
-    vendor_address1:string;
+    category: string;
 
-    @IsString()
-    vendor_address2:string;
+    @IsObject()
+    @IsOptional()
+    details: any;
 
-    @IsString()
-    vendor_gst:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_account_no:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_bank_name:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_ifsc:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_city:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_state:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_pincode:string;
-
-    @IsString()
-    vendor_location:string;
-
-    @IsString()
-    @IsNotEmpty()
-    vendor_mobile_no1:string;
+    @IsObject()
+    @IsOptional()
+    insurance_details: any;
 
     @IsString()
     @IsOptional()
-    vendor_mobile_no2:string;
+    salary: string;
+}
+
+export class UpdateUserPassword {
+    @IsString()
+    @IsNotEmpty()
+    userId: UUID;
+
+    @IsNotEmpty()
+    @IsString()
+    password: string;
+}
+
+export class CreateProcess {
+    @IsString()
+    @IsNotEmpty()
+    process_name: string;
+}
+
+export class CreateEnquiry {
+    @IsString()
+    @IsNotEmpty()
+    customer_name: string;
+
+    @IsString()
+    @IsOptional()
+    existing_customer_id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    machine_name: string;
+
+    @IsString()
+    @IsOptional()
+    existing_machine_id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    contact_no: string;
+
+    @IsObject()
+    @IsNotEmpty()
+    address: any;
+
+    @IsString()
+    @IsOptional()
+    gst_no: string;
+
+    @IsString()
+    @IsNotEmpty()
+    enquiry_resource: string;
+
+    @IsString()
+    @IsNotEmpty()
+    level1_user: UUID;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+}
+
+export class CreateVendor {
+    @IsString()
+    vendor_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_name: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_address1: string;
+
+    @IsString()
+    vendor_address2: string;
+
+    @IsString()
+    vendor_gst: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_account_no: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_bank_name: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_ifsc: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_city: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_state: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_pincode: string;
+
+    @IsString()
+    vendor_location: string;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_mobile_no1: string;
+
+    @IsString()
+    @IsOptional()
+    vendor_mobile_no2: string;
 
     @IsArray()
     vendor_process_list: CreateVendorProcess[]
 }
 
-export class CreateVendorProcess{
+export class CreateVendorProcess {
     @IsString()
     process_id: string;
 
@@ -111,113 +172,163 @@ export class CreateVendorProcess{
     process_name: string;
 }
 
-export class CreateSupplier{
+export class CreateSupplier {
     @IsString()
     @IsNotEmpty()
-    supplier_id:string;
-
-    @IsString()
-    @IsNotEmpty()
-    supplier_name:string;
-
-    @IsString()
-    supplier_address1:string;
+    supplier_id: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_address2:string;
+    supplier_name: string;
+
+    @IsString()
+    supplier_address1: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_account_no:string;
+    supplier_address2: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_bank_name:string;
+    supplier_account_no: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_gst:string;
+    supplier_bank_name: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_ifsc:string;
-
-    @IsString()
-    supplier_location:string;
+    supplier_gst: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_mobile_no1:string;
+    supplier_ifsc: string;
+
+    @IsString()
+    supplier_location: string;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_mobile_no1: string;
 
     @IsString()
     @IsOptional()
-    supplier_mobile_no2:string;
+    supplier_mobile_no2: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_city:string;
+    supplier_city: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_state:string;
+    supplier_state: string;
 
     @IsString()
     @IsNotEmpty()
-    supplier_pincode:string;
+    supplier_pincode: string;
 }
 
-export class CreateCustomer{
+export class CreateCustomer {
     @IsString()
-    customer_id:UUID;
+    customer_id?: UUID;
 
     @IsString()
     @IsNotEmpty()
-    customer_name:string;
+    customer_name: string;
 
     @IsString()
     @IsNotEmpty()
-    customer_address1:string;
+    customer_address1: string;
 
     @IsString()
     @IsNotEmpty()
-    customer_city:string;
-    
+    customer_city: string;
+
     @IsString()
     @IsNotEmpty()
-    customer_state:string;
-    
+    customer_state: string;
+
     @IsString()
     @IsNotEmpty()
-    customer_pincode:string;
+    customer_pincode: string;
 
     @IsString()
-    customer_address2:string;
+    customer_address2?: string;
 
     @IsString()
-    customer_account_no:string;
+    customer_account_no?: string;
 
     @IsString()
-    customer_bank_name:string;
-    
-    @IsString()
-    customer_ifsc:string;
+    customer_bank_name?: string;
 
     @IsString()
-    customer_mobile_no1:string;
+    customer_ifsc?: string;
 
     @IsString()
-    customer_mobile_no2:string;
+    customer_mobile_no1: string;
 
     @IsString()
-    customer_gst:string;
+    customer_mobile_no2?: string;
+
+    @IsString()
+    customer_gst: string;
 
     @IsBoolean()
-    is_machine:boolean;
+    is_machine?: boolean;
 
     @IsBoolean()
-    is_spares:boolean;
+    is_spares?: boolean;
 
     @IsBoolean()
-    is_spm:boolean;
+    is_spm?: boolean;
+}
+
+export class UpdateEnquiryStatus {
+    @IsString()
+    @IsNotEmpty()
+    enquiry_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    status: string;
+
+    @IsUUID()
+    @IsOptional()
+    level2_user: UUID;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+
+    @IsDateString()
+    @IsNotEmpty()
+    quotation_date: Date;
+
+    @IsDateString()
+    @IsNotEmpty()
+    reminder_date: Date;
+
+    @IsNumber()
+    qty: number;
+
+    @IsNumber()
+    cost: number;
+
+    @IsString()
+    @IsOptional()
+    approved_by: string;
+
+    @IsString()
+    @IsOptional()
+    quotation_terms: string[];
+}
+
+export class UpdateNotificationToken {
+    @IsString()
+    @IsNotEmpty()
+    user_id: UUID;
+
+    @IsString()
+    @IsOptional()
+    notification_token: string;
 }

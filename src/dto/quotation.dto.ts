@@ -1,4 +1,4 @@
-import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { UUID } from "crypto";
 
 export class CreateMachineQuotationDto {
@@ -7,7 +7,7 @@ export class CreateMachineQuotationDto {
     quotation_date:Date;
 
     @IsString()
-    machine_id: UUID;
+    machine_id?: UUID;
 
     @IsString()
     @IsNotEmpty()
@@ -36,13 +36,17 @@ export class CreateMachineQuotationDto {
     type: string;
 
     @IsString()
-    quotation_id: UUID;
+    quotation_id?: UUID;
 
     @IsArray()
-    quotation_terms: Array<string>
+    quotation_terms: Array<string>;
 
     @IsArray()
-    spares: Array<any>
+    spares?: Array<any>;
+
+    @IsOptional()
+    @IsString()
+    status?: string;
 }
 
 export class ApproveQuotationDto {
@@ -65,7 +69,11 @@ export class ApproveQuotationDto {
     approved_cost: number;
 
     @IsArray()
-    spares: Array<any>
+    spares: Array<any>;
+
+    @IsNumber()
+    @IsOptional()
+    qty: number;
 }
 
 export class UpdateProductionMachinePartDto {
@@ -283,4 +291,30 @@ export class UpdateBoughtoutPaymentDto {
 
     @IsString()
     created_by: UUID;
+}
+
+export class ReviseMachineQuotationDto {
+    @IsDateString()
+    @IsNotEmpty()
+    reminder_date:Date;
+
+    @IsNumber()
+    qty: number;
+
+    @IsNumber()
+    cost: number;
+
+    @IsString()
+    remarks: string;
+
+    @IsString()
+    @IsNotEmpty()
+    quotation_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    user_id: UUID;
+
+    @IsArray()
+    quotation_terms: Array<string>;
 }
