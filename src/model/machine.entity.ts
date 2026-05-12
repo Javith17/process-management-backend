@@ -34,8 +34,11 @@ export abstract class MachineEntity extends BaseEntity {
     @OneToMany(()=> SectionAssemblyEntity, (sectionAssembly)=>sectionAssembly.machine)
     section_assembly: SectionAssemblyEntity[];
 
-    @Column({nullable: true })
-    image: string;
+    @Column({nullable: true, type: 'simple-json' })
+    images: any;
+
+    @Column({nullable: true, type: 'simple-json' })
+    video_urls: any;
 
     @Column({default: false})
     is_spm: boolean;
