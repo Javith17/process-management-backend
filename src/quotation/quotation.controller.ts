@@ -9,7 +9,7 @@ import multer, { diskStorage } from 'multer';
 import path, { extname, join } from 'path';
 import { mkdir } from 'fs';
 import { QuotationService } from './quotation.service';
-import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, ReviseMachineQuotationDto, SupplierQuotationDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 const fs = require('fs')
 
 @UseGuards(AuthGuard)
@@ -21,6 +21,11 @@ export class QuotationController {
     @Post('/createMachineQoutation')
     createMachineQuotation(@Body() machineQuotation: CreateMachineQuotationDto) {
         return this.quotationService.createMachineQuotation(machineQuotation)   
+    }
+
+    @Post('/reviseMachineQuotation')
+    reviseMachineQuotation(@Body() machineQuotation: ReviseMachineQuotationDto) {
+        return this.quotationService.reviseMachineQuotation(machineQuotation)   
     }
 
     @Post('/createVendorQuotation')

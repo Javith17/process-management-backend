@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 const moment = require('moment');
 import { quotation_terms, template_head } from 'src/common/constants';
 import { Pagination } from 'src/dto/pagination.dto';
-import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { ApproveQuotationDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, ReviseMachineQuotationDto, SupplierQuotationDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
 import { CustomerEntity } from 'src/model/customer.entity';
@@ -61,7 +61,7 @@ export class QuotationService {
 
         if (machineQuotation.type.includes('Add')) {
             const createdByObj = await this.userRepository.findOne({ where: { id: machineQuotation.created_by } })
-            await this.machineQuotationRepository.save({
+            const mq = await this.machineQuotationRepository.save({
                 quotation_no: `MC-${new Date().getTime()}`,
                 quotation_date: machineQuotation.quotation_date,
                 reminder_date: machineQuotation.reminder_date,
@@ -73,9 +73,9 @@ export class QuotationService {
                 remarks: machineQuotation.remarks,
                 quotation_terms: machineQuotation.quotation_terms,
                 initial_cost: machineQuotation.cost.toString(),
-                status: 'Pending Verification'
+                status: machineQuotation?.status ? machineQuotation?.status : 'Pending Verification'
             })
-            return { message: 'Quotation created successfully' }
+            return { message: 'Quotation created successfully', id: mq.id }
         } else {
             const existingMachine = await this.machineQuotationRepository.find({ select: ['id'], where: { id: machineQuotation.quotation_id } })
             if (existingMachine.length > 0) {
@@ -265,10 +265,13 @@ export class QuotationService {
                 'machine_quotation.quotation_no',
                 'machine_quotation.quotation_date',
                 'machine_quotation.reminder_date',
+                'machine_quotation.created_at',
                 'machine_quotation.qty',
                 'machine_quotation.remarks',
                 'machine_quotation.approved_cost',
                 'machine_quotation.quotation_terms',
+                'machine_quotation.revised_history',
+                'machine_quotation.quotation_version',
                 'machine.id',
                 'machine.machine_name',
                 'customer.id',
@@ -290,6 +293,10 @@ export class QuotationService {
             query = query
                 .limit(pagination.limit)
                 .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        if (pagination?.user) {
+            query = query.andWhere('user :=user', { user: pagination.user })
         }
 
         if (pagination?.search) {
@@ -523,6 +530,10 @@ export class QuotationService {
                         verification_remarks: approveDto.approval_reject_remarks,
                         verified_by: approveDto.approved_rejected_by,
                         approved_cost: approveDto.approved_cost?.toString()
+                    }: approveDto.status.includes('Draft Approval') ? {
+                        status: 'Pending Verification',
+                        qty: approveDto.qty,
+                        initial_cost: approveDto.approved_cost?.toString()
                     } : {
                         status: approveDto.status,
                         reason: approveDto.approval_reject_remarks,
@@ -1628,5 +1639,47 @@ export class QuotationService {
 
         </html>
         `
+    }
+
+    async getQuotationRepo() {
+        return this.machineQuotationRepository;        
+    }
+
+    async reviseMachineQuotation(machineQuotation: ReviseMachineQuotationDto) {
+        try {
+            const currentQuotation = await this.machineQuotationRepository.findOne({ where: { id: machineQuotation.quotation_id }});
+            const currentHistory = currentQuotation.revised_history ? currentQuotation.revised_history : [];
+            const addHistory = [...currentHistory, {
+                cost: currentQuotation.initial_cost,
+                qty: currentQuotation.qty,
+                reminder_date: currentQuotation.reminder_date,
+                version: currentQuotation.quotation_version,
+                remarks: currentQuotation.remarks,
+                updated_at: new Date(),
+                revised_by: machineQuotation.user_id,
+                terms: currentQuotation.quotation_terms
+            }]
+            await this.machineQuotationRepository.createQueryBuilder()
+                .update(MachineQuotationEntity)
+                .set({
+                    reminder_date: machineQuotation.reminder_date,
+                    qty: machineQuotation.qty,
+                    remarks: machineQuotation.remarks,
+                    quotation_terms: machineQuotation.quotation_terms,
+                    initial_cost: machineQuotation.cost?.toString(),
+                    revised_history: addHistory,
+                    quotation_version: currentQuotation.quotation_version + 1                    
+                })
+                .where('id=:id', { id: machineQuotation.quotation_id })
+                .execute();
+            return { message: 'Quotation revised successfully' }
+        } catch(err:any)  {
+            throw new HttpException({
+                status: HttpStatus.FORBIDDEN,
+                error: err?.message,
+            }, HttpStatus.FORBIDDEN, {
+                cause: err?.message
+            });
+        }
     }
 }
