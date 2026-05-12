@@ -55,11 +55,11 @@ ConfigModule.forRoot()
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost', //process.env.PG_HOST,
-      port: 5432, //Number(process.env.PG_PORT),
-      username: 'postgres', //process.env.PG_USERNAME,
-      password: 'root', //process.env.PG_PASSWORD,
-      database: 'process_mgnt_1', //process.env.PG_DB,
+      host: process.env.PG_HOST,
+      port: Number(process.env.PG_PORT),
+      username: process.env.PG_USERNAME,
+      password: process.env.PG_PASSWORD,
+      database: process.env.PG_DB,
       entities: [ UserEntity, RoleEntity, ProcessEntity, VendorEntity, VendorProcessEntity, 
         SupplierEntity, CustomerEntity, PartEntity, PartProcessEntity, PartProcessVendorEntity,
         BoughtOutEntity, BoughtOutSuppliertEntity, MachineEntity, SubAssemblyEntity, SubAssemblyDetailEntity,
