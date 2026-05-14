@@ -113,7 +113,8 @@ export class AdminService {
 
     async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
-            .select(['user.id', 'user.emp_code', 'user.emp_name', 'user.category', 'user.details', 'user.salary', 'user.insurance_details'])
+            .select(['user.id', 'user.emp_code', 'user.emp_name', 'user.category', 
+                'user.details', 'user.salary', 'user.insurance_details', 'user.role_id'])
             .where({ is_active: true })
 
         if (pagination?.page) {
