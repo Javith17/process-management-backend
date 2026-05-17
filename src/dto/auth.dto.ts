@@ -23,3 +23,9 @@ export class AcceptByVendorDto{
     @IsOptional()
     remarks: string;
 }
+
+export class SendVendorOTPDto {
+    @IsString()
+    @IsNotEmpty()
+    phone_number: string;
+}

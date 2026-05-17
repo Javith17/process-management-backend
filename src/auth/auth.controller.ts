@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AcceptByVendorDto, SignIn } from 'src/dto/auth.dto';
+import { AcceptByVendorDto, SendVendorOTPDto, SignIn } from 'src/dto/auth.dto';
 import { QuotationService } from 'src/quotation/quotation.service';
 import { AuthService } from './auth.service';
 const jwt = require('jsonwebtoken');
@@ -9,6 +9,11 @@ const jwt = require('jsonwebtoken');
 export class AuthController {
     constructor(private authService:AuthService,
         private configService:ConfigService){}
+
+    @Get('/healthCheck')
+    async healthCheck(): Promise<{ message: string }> {
+        return { message: 'Connected' };
+    }
 
     @Post('/signIn')
     async signIn(@Body() signIn:SignIn){
@@ -22,7 +27,13 @@ export class AuthController {
                 userName: user.user.empName
             }
             const token = await jwt.sign(data, secret)
-            return { user: user.user, accessToken: token}
+            return { user: user.user, accessToken: token, configs: {
+                office_location: {
+                    latitue: process.env.SOURCE_LAT,
+                    longitude: process.env.SOURCE_LNG,
+                    perimeter: 100 // In meters
+                }
+            }}
         }else{
             throw new HttpException("Invalid credentials", HttpStatus.FORBIDDEN)
         }
@@ -36,5 +47,10 @@ export class AuthController {
     @Post('/vendorAcceptStatus')
     async acceptByVendor(@Body() acceptVendor: AcceptByVendorDto){
         return await this.authService.acceptVendor(acceptVendor)
+    }
+
+    @Post('/sendVendorOTP')
+    async sendVendorOtp(@Body() sendOtp: SendVendorOTPDto) {
+
     }
 }

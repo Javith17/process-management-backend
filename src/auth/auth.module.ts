@@ -6,9 +6,10 @@ import { UserEntity } from "src/model/user.entity";
 import { QuotationService } from "src/quotation/quotation.service";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { VendorEntity } from "src/model/vendor.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity, ProductionMachinePartEntity])],
+    imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity, ProductionMachinePartEntity, VendorEntity])],
     providers: [AuthService],
     controllers: [AuthController]
   })

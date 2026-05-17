@@ -46,4 +46,10 @@ export abstract class AttendanceEntity extends BaseEntity{
 
     @Column({ nullable:true })
     status: string;
+
+    @Column({ nullable:true, type: 'simple-json' })
+    location_alerts: any[];
+
+    @Column({ nullable:true, type: 'simple-json' })
+    screen_time_alerts: any[];
 }

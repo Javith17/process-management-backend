@@ -92,3 +92,20 @@ export class LeaveRequestListDto {
     @IsString()
     search: string;
 }
+
+export class AddLocationAlertDto {
+    @IsString()
+    user_id: UUID;
+
+    @IsString()
+    attendance_date: string;
+
+    @IsString()
+    location_detail: string;
+
+    @IsString()
+    current_time: string;
+
+    @IsString()
+    screen_time: string;
+}

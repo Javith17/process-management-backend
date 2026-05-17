@@ -113,10 +113,13 @@ export class AdminService {
 
     async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
-            .select(['user.id', 'user.emp_code', 'user.emp_name', 'user.category', 
-                'user.details', 'user.salary', 'user.insurance_details', 'user.role_id'])
+        .leftJoin(RoleEntity, 'role', `"user"."role_id"::text = "role"."id"::text`)
+            .select(['user.id as id', 'user.emp_code as emp_code', 'user.emp_name as emp_name', 
+                'user.category as category', 'user.details as details', 'user.salary as salary', 
+                'user.insurance_details as insurance_details', 'user.role_id as role_id', 'role.role_name as role_name'])
             .where({ is_active: true })
 
+        const count = await query.getCount();
         if (pagination?.page) {
             query = query
                 .limit(pagination.limit)
@@ -127,7 +130,7 @@ export class AdminService {
             query = query.andWhere('LOWER(user.emp_name) LIKE :empName', { empName: `%${pagination.search.toLowerCase()}%` })
         }
 
-        const [list, count] = await query.getManyAndCount()
+        const list = await query.getRawMany()
         return {
             list, count
         }

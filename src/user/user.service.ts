@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AttendanceUpdateDto, DailyAttendanceDto, LeaveRequestDto, LeaveRequestListDto, MonthlyAttendanceDto, UpdateLeaveRequestDto } from 'src/dto/user.dto';
+import { AddLocationAlertDto, AttendanceUpdateDto, DailyAttendanceDto, LeaveRequestDto, LeaveRequestListDto, MonthlyAttendanceDto, UpdateLeaveRequestDto } from 'src/dto/user.dto';
 import { AttendanceEntity } from 'src/model/attendance.entity';
 import { UserEntity } from 'src/model/user.entity';
 import { Repository } from 'typeorm';
@@ -248,24 +248,45 @@ export class UserService {
       'attendance.id as id',
       'user.emp_code as emp_code',
       'user.emp_name as emp_name',
+
       'attendance.user_id as attendance_user_id',
       'attendance.attendance_date as attendance_date',
+
       'attendance.check_in_time as check_in_time',
       'attendance.check_out_time as check_out_time',
+
       'attendance.is_leave as is_leave',
       'attendance.total_working_hrs as total_working_hrs',
+
       'attendance.break_details as break_details',
-      'attendance.status as status',
       'attendance.total_break_hrs as total_break_hrs',
+
       'attendance.is_verified as is_verified',
       'attendance.remarks as remarks',
       'attendance.location_details as location_details',
     ])
 
+    // Dynamic Status
+    .addSelect(
+      `
+      CASE
+        WHEN attendance.is_leave = true THEN 'Leave'
+        WHEN attendance.check_in_time IS NOT NULL THEN 'Present'
+        WHEN attendance.id IS NULL
+            AND :date < CURRENT_DATE THEN 'Absent'
+        ELSE ''
+      END
+      `,
+      'status',
+    )
+
     .where('user.is_active = :isActive', {
       isActive: true,
     })
-    .orderBy('user.emp_name', 'ASC')
+
+    .setParameter('date', dailyAttendanceDto.attendance_date)
+
+    .orderBy('user.emp_name', 'ASC');
 
     const users = await query.getRawMany();
 
@@ -366,6 +387,63 @@ export class UserService {
     return {
       message: 'Leave Details',
       list: leaveData
+    }
+  }
+
+  
+  async addLocationAlert(locationAlertDto: AddLocationAlertDto) {
+    try {
+      const user = await this.userRepository.findOne({ where: { id: locationAlertDto.user_id } });
+      const attendance = await this.attendanceRepository.findOne({ where: { user: user, attendance_date: new Date(locationAlertDto.attendance_date) } });
+
+      let currentLocationAlerts = attendance.location_alerts ? attendance.location_alerts : [];
+      await this.attendanceRepository.createQueryBuilder()
+        .update(AttendanceEntity).set({
+          location_alerts: [...currentLocationAlerts, {
+            location: locationAlertDto.location_detail,
+            time: locationAlertDto.current_time
+          }]
+        })
+        .where('id =:id', { id: attendance.id })
+        .execute();
+      return {
+        message: 'Added Alert'
+      }
+    } catch(error: any) {
+      throw new HttpException({
+          status: HttpStatus.FORBIDDEN,
+          error: error.message,
+        }, HttpStatus.FORBIDDEN, {
+          cause: error.message
+        });
+    }
+  }
+
+  async addScreenTimeAlert(screenTimeAlertDto: AddLocationAlertDto) {
+    try {
+      const user = await this.userRepository.findOne({ where: { id: screenTimeAlertDto.user_id } });
+      const attendance = await this.attendanceRepository.findOne({ where: { user: user, attendance_date: new Date(screenTimeAlertDto.attendance_date) } });
+
+      let currentScreenTimeAlerts = attendance.screen_time_alerts ? attendance.screen_time_alerts : [];
+      await this.attendanceRepository.createQueryBuilder()
+        .update(AttendanceEntity).set({
+          screen_time_alerts: [...currentScreenTimeAlerts, {
+            screen_time: screenTimeAlertDto.screen_time,
+            time: new Date()
+          }]
+        })
+        .where('id =:id', { id: attendance.id })
+        .execute();
+      return {
+        message: 'Added Alert'
+      }
+    } catch(error: any) {
+      throw new HttpException({
+          status: HttpStatus.FORBIDDEN,
+          error: error.message,
+        }, HttpStatus.FORBIDDEN, {
+          cause: error.message
+        });
     }
   }
 }

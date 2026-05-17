@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, UploadedFiles, Res, UseGuards, UseI
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { AttendanceUpdateDto, DailyAttendanceDto, LeaveRequestDto, LeaveRequestListDto, MonthlyAttendanceDto, UpdateLeaveRequestDto } from 'src/dto/user.dto';
+import { AddLocationAlertDto, AttendanceUpdateDto, DailyAttendanceDto, LeaveRequestDto, LeaveRequestListDto, MonthlyAttendanceDto, UpdateLeaveRequestDto } from 'src/dto/user.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { AttendanceImageDto, FileDto } from 'src/dto/machine.dto';
@@ -79,5 +79,15 @@ export class UserController {
   @Post('/leave-request-list')
   fetchLeaveRequestList(@Body() leaveRequestListDto: LeaveRequestListDto){
     return this.userService.getLeaveRequestList(leaveRequestListDto);
+  }
+
+  @Post('/location-alert')
+  addLocationAlert(@Body() locationAlertDto: AddLocationAlertDto){
+    return this.userService.addLocationAlert(locationAlertDto);
+  }
+
+  @Post('/screen-alert')
+  addScreenTimeAlert(@Body() screenTimeAlertDto: AddLocationAlertDto){
+    return this.userService.addScreenTimeAlert(screenTimeAlertDto);
   }
 }

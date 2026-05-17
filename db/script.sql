@@ -466,3 +466,6 @@ ALTER TABLE machine_quotation ADD COLUMN IF NOT EXISTS revised_history jsonb NUL
 ALTER TABLE machine_quotation ADD COLUMN IF NOT EXISTS quotation_version int NOT NULL DEFAULT 1;
 ALTER TABLE machines ADD COLUMN IF NOT EXISTS video_url jsonb NULL;
 ALTER TABLE machines ADD COLUMN IF NOT EXISTS images jsonb NULL;
+
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS location_alerts jsonb NULL;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS screen_time_alerts jsonb NULL;
