@@ -41,7 +41,12 @@ export class AdminController {
     createUser(@Body() createUser: CreateUser){
         return this.adminService.createNewUser(createUser)
     }
-    
+
+    @Post('/updateUser')
+    updateUser(@Body() updateUserDto: UpdateUserDto) {
+        return this.adminService.updateUser(updateUserDto);
+    }
+  
     @Get('/users')
     getUsers(@Query() pagination: Pagination){
         return this.adminService.getAllUsers(pagination)
