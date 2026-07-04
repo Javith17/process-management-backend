@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, UseIntercept
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateEnquiryStatus, UpdateNotificationToken, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateEnquiryStatus, UpdateNotificationToken,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { AdminService } from './admin.service';
 
