@@ -159,15 +159,15 @@ export class CreateVendor {
     vendor_gst: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     vendor_account_no: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     vendor_bank_name: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     vendor_ifsc: string;
 
     @IsString()
@@ -222,11 +222,11 @@ export class CreateSupplier {
     supplier_address2: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     supplier_account_no: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     supplier_bank_name: string;
 
     @IsString()
@@ -234,7 +234,7 @@ export class CreateSupplier {
     supplier_gst: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     supplier_ifsc: string;
 
     @IsString()
@@ -289,12 +289,15 @@ export class CreateCustomer {
     customer_address2?: string;
 
     @IsString()
+    @IsOptional()
     customer_account_no?: string;
 
     @IsString()
+    @IsOptional()
     customer_bank_name?: string;
 
     @IsString()
+    @IsOptional()
     customer_ifsc?: string;
 
     @IsString()
