@@ -49,6 +49,39 @@ export class CreateUser {
     salary: string;
 }
 
+export class UpdateUserDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  @IsOptional()
+  empName?: string;
+
+  @IsString()
+  @IsOptional()
+  empCode?: string;
+
+  @IsUUID()
+  @IsOptional()
+  roleId?: UUID;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @IsObject()
+  @IsOptional()
+  details?: any;
+
+  @IsObject()
+  @IsOptional()
+  insurance_details?: any;
+
+  @IsString()
+  @IsOptional()
+  salary?: string;
+}
+
 export class UpdateUserPassword {
     @IsString()
     @IsNotEmpty()
