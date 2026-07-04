@@ -1,9 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { quotation_terms } from 'src/common/constants';
 import { NotificationService } from 'src/common/notification.service';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateEnquiryStatus, UpdateNotificationToken, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateEnquiryStatus, UpdateNotificationToken,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -111,6 +111,29 @@ export class AdminService {
         }
     }
 
+    async updateUser(updateUserDto: UpdateUserDto) {
+        const user = await this.userRepository.findOne({
+            where: { id: updateUserDto.id as UUID },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        Object.assign(user, updateUserDto);
+
+        const updatedUser = await this.userRepository.save(user);
+
+        return {
+            id: updatedUser.id,
+            empCode: updatedUser.emp_code,
+            empName: updatedUser.emp_name,
+            roleId: updatedUser.role_id,
+            category: updatedUser.category,
+            salary: updatedUser.salary,
+        };
+    }
+    
     async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
         .leftJoin(RoleEntity, 'role', `"user"."role_id"::text = "role"."id"::text`)
@@ -647,8 +670,8 @@ export class AdminService {
     async updateEnquiryStatus(cmd: UpdateEnquiryStatus) {
         try {
             const enquiry = await this.enquiryRepo.createQueryBuilder('enquiry')
-                .innerJoinAndSelect('enquiry.level2_user', 'followup_user')
-                .innerJoinAndSelect('enquiry.level1_user', 'created_user')
+                .leftJoinAndSelect('enquiry.level2_user', 'followup_user')
+                .leftJoinAndSelect('enquiry.level1_user', 'created_user')
                 .where("enquiry.id =:enquiry_id", { enquiry_id: cmd.enquiry_id })
                 .getOne();
 
