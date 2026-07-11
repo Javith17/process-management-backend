@@ -886,6 +886,7 @@ export class AssemblyService {
                     'SUM(CASE WHEN s.status = :status THEN 1 ELSE 0 END) AS completed_count',
                 ])
                 .where('s.sub_assembly_id=:subId', { subId: cmd.assembly_id })
+                .andWhere('s.order_id=:orderId', { orderId: cmd.order_id })
                 .groupBy('s.sub_assembly_id')
                 .having('COUNT(s.sub_assembly_id) = SUM(CASE WHEN s.status = :status THEN 1 ELSE 0 END)')
                 .setParameters({
@@ -948,6 +949,7 @@ export class AssemblyService {
                     'SUM(CASE WHEN m.status = :status THEN 1 ELSE 0 END) AS completed_count',
                 ])
                 .where('m.main_assembly_id=:mainId', { mainId: cmd.assembly_id })
+                .andWhere('m.order_id=:orderId', { orderId: cmd.order_id })
                 .groupBy('m.main_assembly_id')
                 .having('COUNT(m.main_assembly_id) = SUM(CASE WHEN m.status = :status THEN 1 ELSE 0 END)')
                 .setParameters({
@@ -966,6 +968,31 @@ export class AssemblyService {
                         .execute()
                 }
             })
+
+            const order = await this.orderRepo.findOne({where: { id: cmd.order_id}})
+            await this.historyRepo.save({
+                parent_id: cmd.assembly_id,
+                type: 'Main Assembly',
+                type_id: cmd.id,
+                type_name: cmd.name,
+                data: { action: cmd.status },
+                remarks: '',
+                from_status: '',
+                to_status: cmd.status,
+                order: order,
+                changed_by: cmd.assembled_by
+            })
+
+            return { message: 'Status updated successfully' }
+        }  else if (cmd.assembly_type == 'section_assembly') {            
+            await this.assemblySectionRepo.createQueryBuilder()
+                .update(AssemblyMachineSectionEntity)
+                .set({
+                    status: cmd.status,
+                    assembled_by: user
+                })
+                .where('id=:id', { id: cmd.id })
+                .execute()
 
             const order = await this.orderRepo.findOne({where: { id: cmd.order_id}})
             await this.historyRepo.save({
