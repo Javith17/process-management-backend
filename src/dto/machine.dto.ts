@@ -1,6 +1,12 @@
 import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 import { UUID } from "crypto";
 
+export class DeleteMachineDto {
+    @IsUUID()
+    @IsNotEmpty()
+    id: UUID;
+}
+
 export class CreatePart {
     @IsString()
     @IsNotEmpty()

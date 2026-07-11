@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
-import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, FileDetailsDto, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
+import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, DeleteMachineDto, FileDetailsDto, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
 import { CheckNameDto, Pagination, RemoveAttachmentDto } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -198,7 +198,7 @@ export class MachineService {
 
         const list = await query.getMany()
         return { list, count }
-        }catch(err){
+        }catch(err: any){
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
                 error: err.message,
@@ -224,7 +224,7 @@ export class MachineService {
 
         const list = await query.getMany()
         return { list  }
-        }catch(err){
+        }catch(err: any){
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
                 error: err.message,
@@ -258,7 +258,7 @@ export class MachineService {
 
         const [list, count] = await query.getManyAndCount()
         return { list, count }
-        }catch(err){
+        }catch(err: any){
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
                 error: err.message,
@@ -430,7 +430,7 @@ export class MachineService {
 
         const list = await query.getMany()
         return { list  }
-        }catch(err){
+        }catch(err: any){
             throw new HttpException({
                 status: HttpStatus.FORBIDDEN,
                 error: err.message,
@@ -1101,7 +1101,11 @@ export class MachineService {
     async updatePart(updatePartDto: UpdatePartDto) {
         if (updatePartDto.update_type.includes('delete')) {
             if (updatePartDto.update_type_entity.includes('part_process')) {
-                await this.partProcessVendorRepository.delete({ part_process: updatePartDto.id })
+                await this.partProcessVendorRepository.createQueryBuilder()
+                    .delete()
+                    .from(PartProcessVendorEntity)
+                    .where('part_process_id = :partProcessId', { partProcessId: updatePartDto.id })
+                    .execute()
                 await this.partProcessRepository.delete({ id: updatePartDto.id })
                 return { message: 'Part process removed successfully' }
             } else if (updatePartDto.update_type_entity.includes('process_vendor')) {
@@ -1283,6 +1287,16 @@ export class MachineService {
         }
     }
 
+    async deleteMachine(deleteMachineDto: DeleteMachineDto) {
+        const machine = await this.machineRepository.findOne({ where: { id: deleteMachineDto.id as any } });
+        if (!machine) {
+            return { message: 'Machine not found' };
+        }
+
+        await this.machineRepository.update(deleteMachineDto.id as any, { is_active: false } as Partial<MachineEntity>);
+        return { message: 'Machine deleted successfully' };
+    }
+
     async createMachine(createMachineDto: CreateMachine) {
         const existingMachine = await this.machineRepository.find({ select: ['id', 'machine_name'], where: { is_active: true, machine_name: createMachineDto.machine_name } })
 
@@ -1407,6 +1421,7 @@ export class MachineService {
                 'machine.max_spindles',
                 'machine.video_urls'
             ])
+        .where('machine.is_active = :isActive', { isActive: true })
 
         if (pagination?.page) {
             query = query

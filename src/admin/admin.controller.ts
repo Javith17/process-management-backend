@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, UseIntercept
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, UpdateEnquiryStatus, UpdateNotificationToken,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { AdminService } from './admin.service';
 
@@ -27,6 +27,11 @@ export class AdminController {
         return this.adminService.updateRole(updateRole);
     }
 
+    @Post('/deleteRole')
+    deleteRole(@Body() deleteRoleDto: DeleteByIdDto){
+        return this.adminService.deleteRole(deleteRoleDto);
+    }
+
     @Get('/roles')
     getRoles(@Query() pagination: Pagination){
         return this.adminService.getAllRoles(pagination)
@@ -45,6 +50,11 @@ export class AdminController {
     @Post('/updateUser')
     updateUser(@Body() updateUserDto: UpdateUserDto) {
         return this.adminService.updateUser(updateUserDto);
+    }
+
+    @Post('/deleteUser')
+    deleteUser(@Body() deleteUserDto: DeleteByIdDto) {
+        return this.adminService.deleteUser(deleteUserDto);
     }
   
     @Get('/users')
@@ -67,6 +77,11 @@ export class AdminController {
         return this.adminService.createProcess(createProcess)
     }
 
+    @Post('/updateProcess')
+    updateProcess(@Body() createProcess: UpdateProcess){
+        return this.adminService.createProcess(createProcess)
+    }
+
     @Get('/processList')
     getProcessList(@Query() pagination: Pagination){
         return this.adminService.getAllProcess(pagination)
@@ -80,6 +95,11 @@ export class AdminController {
     @Post('/updateVendor')
     updateVendor(@Body() createVendor: CreateVendor){
         return this.adminService.updateVendor(createVendor)
+    }
+
+    @Post('/deleteVendor')
+    deleteVendor(@Body() deleteVendorDto: DeleteByIdDto){
+        return this.adminService.deleteVendor(deleteVendorDto)
     }
 
     @Get('/vendor/:id')
@@ -110,6 +130,11 @@ export class AdminController {
     @Post('/updateSupplier')
     updateSupplier(@Body() createSupplier: CreateSupplier){
         return this.adminService.updateSupplier(createSupplier)
+    }
+
+    @Post('/deleteSupplier')
+    deleteSupplier(@Body() deleteSupplierDto: DeleteByIdDto){
+        return this.adminService.deleteSupplier(deleteSupplierDto)
     }
 
     @Post('/createCustomer')

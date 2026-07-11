@@ -1,6 +1,12 @@
 import { IsArray, IsBoolean, IsDateString, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsUUID } from "class-validator";
 import { UUID } from "crypto";
 
+export class DeleteByIdDto {
+    @IsUUID()
+    @IsNotEmpty()
+    id: UUID;
+}
+
 export class CreateRole {
     @IsString()
     @IsOptional()
@@ -98,6 +104,16 @@ export class CreateProcess {
     process_name: string;
 }
 
+export class UpdateProcess {
+    @IsUUID()
+    @IsNotEmpty()
+    id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    process_name: string;
+}
+
 export class CreateEnquiry {
     @IsString()
     @IsNotEmpty()
@@ -156,6 +172,7 @@ export class CreateVendor {
     vendor_address2: string;
 
     @IsString()
+    @IsOptional()
     vendor_gst: string;
 
     @IsString()

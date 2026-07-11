@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { quotation_terms } from 'src/common/constants';
 import { NotificationService } from 'src/common/notification.service';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateEnquiryStatus, UpdateNotificationToken,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -70,6 +70,15 @@ export class AdminService {
         return { roleId: role.id, message: "Role updated successfully" }
     }
 
+    async deleteRole(deleteRoleDto: DeleteByIdDto) {
+        const role = await this.roleRepository.findOne({ where: { id: deleteRoleDto.id as UUID } });
+        if (!role) {
+            return { message: "Role not found" }
+        }
+        await this.roleRepository.update(deleteRoleDto.id as UUID, { is_active: false } as Partial<RoleEntity>);
+        return { message: "Role deleted successfully" }
+    }
+
     async getAllRoles(pagination: Pagination) {
         let query = this.roleRepository.createQueryBuilder('roles')
             .select(['roles.role_code', 'roles.role_name',
@@ -133,6 +142,15 @@ export class AdminService {
             salary: updatedUser.salary,
         };
     }
+
+    async deleteUser(deleteUserDto: DeleteByIdDto) {
+        const user = await this.userRepository.findOne({ where: { id: deleteUserDto.id as UUID } });
+        if (!user) {
+            return { message: "User not found" }
+        }
+        await this.userRepository.update(deleteUserDto.id as UUID, { is_active: false } as Partial<UserEntity>);
+        return { message: "User deleted successfully" }
+    }
     
     async getAllUsers(pagination: Pagination) {
         let query = this.userRepository.createQueryBuilder('user')
@@ -175,13 +193,40 @@ export class AdminService {
     }
 
     async createProcess(processDto: CreateProcess) {
-        const process = await this.processRepository.find({ select: ['id', 'process_name'], where: { is_active: true, process_name: processDto.process_name } })
+        const process = await this.processRepository.find({
+            select: ['id', 'process_name'],
+            where: { is_active: true, process_name: processDto.process_name }
+        })
         if (process.length > 0) {
             return { message: "Process already exists" }
         }
         const newProcess = await this.processRepository.create(processDto)
         await this.processRepository.save(newProcess)
         return { message: "Process created successfully" }
+    }
+
+    async updateProcess(processDto: UpdateProcess) {
+        const query = this.processRepository.createQueryBuilder('process')
+            .select(['process.id', 'process.process_name'])
+            .where('process.is_active = :isActive', { isActive: true })
+            .andWhere('LOWER(process.process_name) = LOWER(:processName)', { processName: processDto.process_name })
+
+        if (processDto.id) {
+            query.andWhere('process.id::text != :id', { id: processDto.id })
+        }
+
+        const process = await query.getMany()
+
+        if (process.length > 0) {
+            return { message: "Process already exists" }
+        }
+
+        await this.processRepository.createQueryBuilder()
+            .update(ProcessEntity).set({ process_name: processDto.process_name })
+            .where('id::VARCHAR=:id', { id: processDto.id })
+            .execute()
+            
+        return { message: "Process updated successfully" }
     }
 
     async getAllProcess(pagination: Pagination) {
@@ -233,6 +278,15 @@ export class AdminService {
         })
 
         return { message: "Vendor created successfully" }
+    }
+
+    async deleteVendor(deleteVendorDto: DeleteByIdDto) {
+        const vendor = await this.vendorRepository.findOne({ where: { id: deleteVendorDto.id as UUID } });
+        if (!vendor) {
+            return { message: "Vendor not found" }
+        }
+        await this.vendorRepository.update(deleteVendorDto.id as UUID, { is_active: false } as Partial<VendorEntity>);
+        return { message: "Vendor deleted successfully" }
     }
 
     async updateVendor(vendorDto: CreateVendor) {
@@ -382,6 +436,7 @@ export class AdminService {
                     'vendor.vendor_ifsc', 'vendor.vendor_city', 'vendor.vendor_state', 'vendor.vendor_pincode',
                     'vendor.vendor_mobile_no1', 'vendor.vendor_mobile_no2',
                     'vendor.vendor_location'])
+                .where('vendor.is_active = :isActive', { isActive: true })
 
             if (pagination?.page) {
                 query = query
@@ -452,6 +507,15 @@ export class AdminService {
         return {
             list, count
         }
+    }
+
+    async deleteSupplier(deleteSupplierDto: DeleteByIdDto) {
+        const supplier = await this.supplierRepository.findOne({ where: { id: deleteSupplierDto.id as UUID } });
+        if (!supplier) {
+            return { message: "Supplier not found" }
+        }
+        await this.supplierRepository.update(deleteSupplierDto.id as UUID, { is_active: false } as Partial<SupplierEntity>);
+        return { message: "Supplier deleted successfully" }
     }
 
     async updateSupplier(supplierDto: CreateSupplier) {
