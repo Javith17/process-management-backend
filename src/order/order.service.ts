@@ -955,6 +955,7 @@ export class OrderService {
             .innerJoin(MachineQuotationEntity, 'q', 'q.id = o.quotation_id')
             .innerJoin(SupplierEntity, 's', 'bo.supplier_id = s.id::VARCHAR')
             .select([
+                'bo.order_id',
                 'bo.id',
                 'q.quotation_no',
                 'bo.bought_out_name',
