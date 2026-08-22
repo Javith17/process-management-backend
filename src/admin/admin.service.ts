@@ -111,6 +111,12 @@ export class AdminService {
 
     async createNewUser(userDto: CreateUser) {
         const newUser = await this.userRepository.create(userDto)
+
+        const existingUser = await this.userRepository.findOne({ where: { emp_code: newUser.emp_code } })
+        if (existingUser && existingUser.is_active) {
+            throw new HttpException("Employee code already exists", HttpStatus.CONFLICT)
+        }
+
         await this.userRepository.save(newUser)
         return {
             empCode: newUser.emp_code,

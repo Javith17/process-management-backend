@@ -8,7 +8,7 @@ export abstract class UserEntity extends BaseEntity{
     @Column()
     emp_name: string;
 
-    @Column({ unique:true })
+    @Column()
     emp_code: string;
 
     @Column()

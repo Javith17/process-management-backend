@@ -1067,9 +1067,11 @@ export class MachineService {
                 })
                 return { message: 'Machine added to Boughtout successfully' }
             }else if(updateBoughtoutDto.update_type_entity.includes('bought_out_machine_delete')){
+                const machineId = (updateBoughtoutDto.id as any)?.id ?? updateBoughtoutDto.id
                 await this.boughtOutMachineRepo.createQueryBuilder().delete().from(BoughtoutMachineEntity)
-                .where('machine_id=:machineId', { machineId: updateBoughtoutDto.id})
+                .where('machine_id=:machineId', { machineId })
                 .andWhere('boughtout_id=:boughtoutId', { boughtoutId: updateBoughtoutDto.boughtout_id })
+                .execute()
                 return { message: 'Machine removed from Boughtout successfully' }
             }else{
                 await this.boughtOutSupplierRepository.createQueryBuilder()
@@ -1161,9 +1163,11 @@ export class MachineService {
                 })
                 return { message: 'Machine added to Part successfully' }
             }else if(updatePartDto.update_type_entity.includes('part_machine_delete')){
+                const machineId = (updatePartDto.id as any)?.id ?? updatePartDto.id
                 await this.partMachineRepo.createQueryBuilder().delete().from(PartMachineEntity)
-                    .where('machine_id=:machineId', { machineId: updatePartDto.id})
+                    .where('machine_id=:machineId', { machineId })
                     .andWhere('part_id=:partId', { partId: updatePartDto.part_id })
+                    .execute()
                 return { message: 'Machine removed from Part successfully' }
             }
         } else if (updatePartDto.update_type.includes('add')) {
