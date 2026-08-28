@@ -227,13 +227,13 @@ export class OrderService {
         await this.historyRepo.save({
             parent_id: deliverProductionMachinePart.production_part_id,
             type: 'Part',
-            type_id: currentObj.part_id,
-            type_name: currentObj.part_name,
+            type_id: currentObj?.part_id,
+            type_name: currentObj?.part_name,
             data: { action: 'Order process completed by vendor' },
             remarks: deliverProductionMachinePart.remarks,
-            from_status: currentObj.status,
+            from_status: currentObj?.status,
             to_status: 'Completed',
-            order: currentObj.order,
+            order: currentObj?.order,
             changed_by: deliverProductionMachinePart.created_by
         })
         return { message: 'Complete status updated successfully' }
@@ -256,13 +256,13 @@ export class OrderService {
             await this.historyRepo.save({
                 parent_id: rescheduleDto.production_part_id,
                 type: 'Part',
-                type_id: productionPart.part_id,
-                type_name: productionPart.part_name,
-                data: { action: `Order process delivery rescheduled from ${productionPart.delivery_date} to ${rescheduleDto.reschedule_delivery_date}` },
+                type_id: productionPart?.part_id,
+                type_name: productionPart?.part_name,
+                data: { action: `Order process delivery rescheduled from ${productionPart?.delivery_date} to ${rescheduleDto.reschedule_delivery_date}` },
                 remarks: rescheduleDto.remarks,
-                from_status: productionPart.status,
-                to_status: productionPart.status,
-                order: productionPart.order,
+                from_status: productionPart?.status,
+                to_status: productionPart?.status,
+                order: productionPart?.order,
                 changed_by: rescheduleDto.created_by
             })
 
@@ -973,26 +973,35 @@ export class OrderService {
     }
 
     async closeAssembly(closeOrderDto: CloseOrderDto) {
-        const partsTotalCount = await this.productionMachinePartRepo.count({ where: { order_id: closeOrderDto.order_id } })
-        const partsClosedCount = await this.productionMachinePartRepo.count({ where: { order_id: closeOrderDto.order_id, status: 'Assembly Completed' } })
+        const subTotalCount = await this.assemblySubRepo.count({ where: { order: { id: closeOrderDto.order_id } } })
+        const subClosedCount = await this.assemblySubRepo.count({ where: { order: { id: closeOrderDto.order_id }, status: 'Assembly Completed' } })
 
-        const boTotalCount = await this.productionMachineBoughtoutRepo.count({ where: { order_id: closeOrderDto.order_id } })
-        const boClosedCount = await this.productionMachineBoughtoutRepo.count({ where: { order_id: closeOrderDto.order_id, status: 'Assembly Completed' } })
+        const mainTotalCount = await this.assemblyMainRepo.count({ where: { order: { id: closeOrderDto.order_id } } })
+        const mainClosedCount = await this.assemblyMainRepo.count({ where: { order: { id: closeOrderDto.order_id }, status: 'Assembly Completed' } })
 
-        let partsClosed = false
-        let boClosed = false
-        if (partsClosedCount == partsTotalCount) {
-            partsClosed = true
-        }
-        if (boClosedCount == boTotalCount) {
-            boClosed = true
-        }
+        const sectionTotalCount = await this.assemblySectionRepo.count({ where: { order: { id: closeOrderDto.order_id } } })
+        const sectionClosedCount = await this.assemblySectionRepo.count({ where: { order: { id: closeOrderDto.order_id }, status: 'Assembly Completed' } })
 
-        if (!partsClosed) {
-            return { message: 'Parts assembly not completed' }
-        } else if (!boClosed) {
-            return { message: 'Boughtout assembly not completed' }
+        const assemblyCompleted =
+            subTotalCount === subClosedCount &&
+            mainTotalCount === mainClosedCount &&
+            sectionTotalCount === sectionClosedCount
+
+        if (!assemblyCompleted) {
+            return { message: 'Assembly not completed' }
         } else {
+            await this.productionMachinePartRepo.createQueryBuilder()
+                .update(ProductionMachinePartEntity)
+                .set({ status: 'Assembly Completed' })
+                .where('order_id=:order_id', { order_id: closeOrderDto.order_id })
+                .execute()
+
+            await this.productionMachineBoughtoutRepo.createQueryBuilder()
+                .update(ProductionMachineBoughtoutEntity)
+                .set({ status: 'Assembly Completed' })
+                .where('order_id=:order_id', { order_id: closeOrderDto.order_id })
+                .execute()
+
             const existingOrder = await this.orderConfirmationRepository.findOne({ where: { id: closeOrderDto.order_id } })
             await this.orderConfirmationRepository.createQueryBuilder()
                 .update(OrderConfirmationEntity)

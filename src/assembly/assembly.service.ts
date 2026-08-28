@@ -1010,5 +1010,7 @@ export class AssemblyService {
 
             return { message: 'Status updated successfully' }
         }
+
+        throw new HttpException(`Invalid assembly_type: ${cmd.assembly_type}`, HttpStatus.BAD_REQUEST)
     }
 }
