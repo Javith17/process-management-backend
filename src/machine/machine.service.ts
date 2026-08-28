@@ -1463,7 +1463,7 @@ export class MachineService {
                 'machine.spindles',
                 'machine.min_spindles',
                 'machine.max_spindles',
-                'machine.image',
+                'machine.images',
                 'sub_assembly.id',
                 'sub_assembly.sub_assembly_name',
                 'machine_sub_assembly.id',

@@ -300,8 +300,10 @@ export class AdminService {
             where: { is_active: true, vendor_name: vendorDto.vendor_name, }
         })
 
-        if (existingVendor.id != vendorDto.vendor_id) {
-            return { message: "Vendor name already exists" }
+        if (existingVendor) {
+            if (existingVendor?.id != vendorDto.vendor_id) {
+                return { message: "Vendor name already exists" }
+            }
         }
 
         const vendor = await this.vendorRepository.update({ id: vendorDto.vendor_id }, {
@@ -809,7 +811,7 @@ export class AdminService {
                     quotation_terms: cmd.quotation_terms,
                     cost: cmd.cost,
                     type: 'Add',
-                    status: 'Draft'
+                    status: 'Pending Verification'
                 });
                 this.notificationService.send([], 'New quotation', `Quotation created for ${enquiry.customer_name} `, {
                     id: quotation.id,
