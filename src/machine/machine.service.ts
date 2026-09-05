@@ -165,7 +165,7 @@ export class MachineService {
         }
 
         if (pagination?.search) {
-            ids_query = ids_query.andWhere('LOWER(part.part_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
+            ids_query = ids_query.andWhere('LOWER(parts.part_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
         }
 
         const ids = await ids_query.getMany()
