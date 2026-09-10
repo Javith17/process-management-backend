@@ -44,6 +44,9 @@ export abstract class VendorEntity extends BaseEntity{
     @Column({ nullable:true })
     vendor_location:string;
 
+    @Column({ nullable:true, default: '0' })
+    pending_payment:string;
+
     @OneToMany(()=> VendorProcessEntity, (vendorProcess)=>vendorProcess.process)
     process_list: VendorProcessEntity[];
 

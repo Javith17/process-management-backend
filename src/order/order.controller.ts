@@ -8,7 +8,7 @@ import { CheckNameDto, Pagination } from 'src/dto/pagination.dto';
 import multer, { diskStorage } from 'multer';
 import path, { extname, join } from 'path';
 import { mkdir } from 'fs';
-import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, MoveProductionMachinePartToVendorDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, GenerateDeliveryChallanDto, MoveProductionMachinePartToVendorDto, RecordVendorProcessPaymentDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, UploadVendorInvoiceDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 import { OrderService } from './order.service';
 const fs = require('fs')
 
@@ -139,6 +139,56 @@ export class OrderController {
 
     @Get('/orderDetail/:id')
     getOrderDetails(@Param('id') orderId: UUID) {
-        return this.orderService.getOrderDetails(orderId)   
+        return this.orderService.getOrderDetails(orderId)
+    }
+
+    @Post('/generateDeliveryChallan')
+    generateDeliveryChallan(@Body() generateDeliveryChallanDto: GenerateDeliveryChallanDto) {
+        return this.orderService.generateDeliveryChallan(generateDeliveryChallanDto)
+    }
+
+    @Get('/deliveryChallanList/:order_id')
+    getDeliveryChallanList(@Param('order_id') order_id: string) {
+        return this.orderService.getDeliveryChallanList(order_id)
+    }
+
+    @Get('/deliveryChallanDoc/:id')
+    getDeliveryChallanDoc(@Param('id') id: UUID) {
+        return this.orderService.getDeliveryChallanDoc(id)
+    }
+
+    @Post('/uploadChallanPdf')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: (req, file, cb) => {
+                cb(null, './uploads')
+            },
+            filename: (req, file, cb) => {
+                cb(null, `DC_${Date.now()}${extname(file.originalname)}`)
+            }
+        })
+    }))
+    uploadChallanPdf(@UploadedFile() file: Express.Multer.File) {
+        return this.orderService.uploadChallanPdf(file)
+    }
+
+    @Post('/recordVendorProcessPayment')
+    recordVendorProcessPayment(@Body() recordVendorProcessPaymentDto: RecordVendorProcessPaymentDto) {
+        return this.orderService.recordVendorProcessPayment(recordVendorProcessPaymentDto)
+    }
+
+    @Post('/uploadVendorInvoice')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: (req, file, cb) => {
+                cb(null, './uploads')
+            },
+            filename: (req, file, cb) => {
+                cb(null, `VINV_${Date.now()}${extname(file.originalname)}`)
+            }
+        })
+    }))
+    uploadVendorInvoice(@UploadedFile() file: Express.Multer.File, @Body() uploadVendorInvoiceDto: UploadVendorInvoiceDto) {
+        return this.orderService.uploadVendorInvoice(file, uploadVendorInvoiceDto)
     }
 }

@@ -385,3 +385,24 @@ export class UpdateNotificationToken {
     @IsOptional()
     notification_token: string;
 }
+
+export class VendorPaymentDto {
+    @IsString()
+    @IsNotEmpty()
+    vendor_id: UUID;
+
+    @IsNumber()
+    @IsNotEmpty()
+    paid_amount: number;
+
+    @IsString()
+    @IsOptional()
+    mode: string;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+
+    @IsString()
+    paid_by: UUID;
+}

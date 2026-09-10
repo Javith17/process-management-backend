@@ -61,8 +61,16 @@ export class MachineService {
         if (existingPart.length > 0) {
             return { message: "Part already exists" }
         }
+
+        if (createPartDto.part_code) {
+            const existingCode = await this.partRepository.find({ select: ['id'], where: { is_active: true, part_code: createPartDto.part_code } })
+            if (existingCode.length > 0) {
+                return { message: "Part code already exists" }
+            }
+        }
         const partObj = await this.partRepository.save({
             part_name: createPartDto.part_name,
+            part_code: createPartDto.part_code,
             minimum_stock_qty: createPartDto.minimum_stock_qty,
             available_aty: createPartDto.available_qty,
             part_category: createPartDto.part_category,
@@ -119,6 +127,7 @@ export class MachineService {
             .select([
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.minimum_stock_qty',
                 'parts.available_aty',
                 'parts.is_machine',
@@ -179,6 +188,7 @@ export class MachineService {
             .select([
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.minimum_stock_qty',
                 'parts.available_aty',
                 'parts.days',
@@ -215,6 +225,7 @@ export class MachineService {
             .select([
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.minimum_stock_qty',
                 'parts.available_aty',
                 'parts.days'
@@ -240,6 +251,7 @@ export class MachineService {
             .select([
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.minimum_stock_qty',
                 'parts.available_aty',
                 'parts.days'
@@ -626,6 +638,7 @@ export class MachineService {
                 'sub_assembly_detail.qty',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.days',
                 'bought_out.id',
                 'bought_out.bought_out_name',
@@ -660,6 +673,7 @@ export class MachineService {
                 'sub_assembly.image',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name'
             ]).where('sub_assembly.id::VARCHAR=:id', { id })
@@ -710,6 +724,7 @@ export class MachineService {
                 'main_assembly_detail.qty',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.days',
                 'bought_out.id',
                 'bought_out.bought_out_name',
@@ -753,6 +768,7 @@ export class MachineService {
                 'main_assembly.image',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name',
                 'sub_assembly.id',
@@ -797,6 +813,7 @@ export class MachineService {
                 'section_assembly_detail.qty',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'parts.days',
                 'bought_out.id',
                 'bought_out.bought_out_name',
@@ -849,6 +866,7 @@ export class MachineService {
                 'section_assembly_detail.qty',
                 'parts.id',
                 'parts.part_name',
+                'parts.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name',
                 'sub_assembly.id',
@@ -1134,9 +1152,16 @@ export class MachineService {
                 if(partNameObj && partNameObj.id != partObj.id){
                     return { message: 'Part name already exists' }
                 }
-                
+
+                if (updatePartDto.part_code) {
+                    const partCodeObj = await this.partRepository.findOneBy({ part_code: updatePartDto.part_code })
+                    if (partCodeObj && partCodeObj.id != partObj.id) {
+                        return { message: 'Part code already exists' }
+                    }
+                }
+
                 await this.partRepository.createQueryBuilder()
-                .update(PartEntity).set({ part_name: updatePartDto.part_name, minimum_stock_qty: Number(updatePartDto.minimum_stock_qty),
+                .update(PartEntity).set({ part_name: updatePartDto.part_name, part_code: updatePartDto.part_code, minimum_stock_qty: Number(updatePartDto.minimum_stock_qty),
                     available_aty: Number(updatePartDto.available_qty), is_machine: updatePartDto.is_machine, is_spm: updatePartDto.is_spm,
                     is_spare: updatePartDto.is_spare
                  })
@@ -1475,6 +1500,7 @@ export class MachineService {
                 'main_assembly_detail.qty',
                 'main_assembly_part.id',
                 'main_assembly_part.part_name',
+                'main_assembly_part.part_code',
                 'main_assembly_bought_out.id',
                 'main_assembly_bought_out.bought_out_name',
                 'main_assembly_sub_assembly.id',
@@ -1486,6 +1512,7 @@ export class MachineService {
                 'section_assembly_detail.qty',
                 'section_assembly_part.id',
                 'section_assembly_part.part_name',
+                'section_assembly_part.part_code',
                 'section_assembly_bought_out.id',
                 'section_assembly_bought_out.bought_out_name',
                 'section_assembly_sub_assembly.id',

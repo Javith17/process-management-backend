@@ -93,11 +93,13 @@ export class AssemblyService {
         for(const spare of spares){
              if(spare.spare_type == 'part'){
                 // Parts of spares - insert to the section
+                const sparePartObj = await this.partRepository.findOne({ where: { id: spare.spare_id } })
                 spare_parts.push({
                     section_assembly_id: '',
                     section_assembly_name: '',
                     part_id: spare.spare_id,
                     part_name: spare.spare_name,
+                    part_code: sparePartObj?.part_code,
                     qty: spare.spare_qty
                 })
             }else if(spare.spare_type == 'bought_out'){
@@ -130,6 +132,7 @@ export class AssemblyService {
                     'sub_detail.qty',
                     'part.id',
                     'part.part_name',
+                    'part.part_code',
                     'bought_out.id',
                     'bought_out.bought_out_name'
                 ])
@@ -163,6 +166,7 @@ export class AssemblyService {
                                     sub_assembly_name: sub.sub_assembly_name,
                                     part_id: detail.part.id,
                                     part_name: detail.part.part_name,
+                                    part_code: detail.part.part_code,
                                     qty: detail.qty
                                 })
                             }
@@ -208,6 +212,7 @@ export class AssemblyService {
                     'main_detail.qty',
                     'main_part.id',
                     'main_part.part_name',
+                    'main_part.part_code',
                     'main_bought_out.id',
                     'main_bought_out.bought_out_name',
                     'sub_assembly.id',
@@ -216,6 +221,7 @@ export class AssemblyService {
                     'sub_detail.qty',
                     'part.id',
                     'part.part_name',
+                    'part.part_code',
                     'bought_out.id',
                     'bought_out.bought_out_name'
                 ])
@@ -230,6 +236,7 @@ export class AssemblyService {
                                 main_assembly_name: detail.main_assembly_name,
                                 part_id: main_detail.part.id,
                                 part_name: main_detail.part.part_name,
+                                part_code: main_detail.part.part_code,
                                 qty: spare.spare_qty * main_detail.qty,
                                 main_assembly_qty: spare.spare_qty
                             })
@@ -263,6 +270,7 @@ export class AssemblyService {
                                             sub_assembly_name: main_detail.sub_assembly.sub_assembly_name,
                                             part_id: sb_detail.part.id,
                                             part_name: sb_detail.part.part_name,
+                                            part_code: sb_detail.part.part_code,
                                             qty: sb_detail.qty
                                         })
                                     }
@@ -314,6 +322,7 @@ export class AssemblyService {
                 sub_assembly_name: sub.sub_assembly_name,
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty * assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
                 sub_assembly_qty:
                     assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
@@ -339,6 +348,7 @@ export class AssemblyService {
                 main_assembly_name: sub.main_assembly_name,
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty,
                 main_assembly_qty: sub.main_assembly_qty,
                 order
@@ -373,6 +383,7 @@ export class AssemblyService {
             this.assemblySectionRepo.save({
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty,
                 order
             })
@@ -436,6 +447,7 @@ export class AssemblyService {
                 'main_detail.qty',
                 'main_part.id',
                 'main_part.part_name',
+                'main_part.part_code',
                 'main_bought_out.id',
                 'main_bought_out.bought_out_name',
                 'sub_assembly.id',
@@ -444,6 +456,7 @@ export class AssemblyService {
                 'sub_detail.qty',
                 'part.id',
                 'part.part_name',
+                'part.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name'
             ])
@@ -473,6 +486,7 @@ export class AssemblyService {
                 'sub_detail.qty',
                 'part.id',
                 'part.part_name',
+                'part.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name'
             ])
@@ -507,6 +521,7 @@ export class AssemblyService {
                 'section_sub.sub_assembly_name',
                 'section_part.id',
                 'section_part.part_name',
+                'section_part.part_code',
                 'section_bought_out.id',
                 'section_bought_out.bought_out_name',
                 'main_assembly.id',
@@ -515,12 +530,14 @@ export class AssemblyService {
                 'main_detail.qty',
                 'main_part.id',
                 'main_part.part_name',
+                'main_part.part_code',
                 'main_bought_out.id',
                 'main_bought_out.bought_out_name',
                 'sub_assembly.id',
                 'sub_assembly.sub_assembly_name',
                 'part.id',
                 'part.part_name',
+                'part.part_code',
                 'bought_out.id',
                 'bought_out.bought_out_name'
             ])
@@ -579,6 +596,7 @@ export class AssemblyService {
                                     main_assembly_name: sectionDetail.main_assembly.main_assembly_name,
                                     part_id: mainDetail.part.id,
                                     part_name: mainDetail.part.part_name,
+                                    part_code: mainDetail.part.part_code,
                                     qty: mainQty * mainDetail.qty,
                                     main_assembly_qty: sectionDetail.qty
                                 })
@@ -607,6 +625,7 @@ export class AssemblyService {
                             section_assembly_name: sectionAssembly.section_assembly_name,
                             part_id: sectionDetail.part.id,
                             part_name: sectionDetail.part.part_name,
+                            part_code: sectionDetail.part.part_code,
                             qty: sectionDetail.qty
                         })
                     } else if (sectionDetail.bought_out) {
@@ -635,6 +654,7 @@ export class AssemblyService {
                                         sub_assembly_name: sub.sub_assembly.sub_assembly_name,
                                         part_id: detail.part.id,
                                         part_name: detail.part.part_name,
+                                        part_code: detail.part.part_code,
                                         qty: detail.qty
                                     })
                                 }
@@ -688,6 +708,7 @@ export class AssemblyService {
                                     sub_assembly_name: sub.sub_assembly.sub_assembly_name,
                                     part_id: detail.part.id,
                                     part_name: detail.part.part_name,
+                                    part_code: detail.part.part_code,
                                     qty: detail.qty
                                 })
                             }
@@ -736,6 +757,7 @@ export class AssemblyService {
                 sub_assembly_name: sub.sub_assembly_name,
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty * assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
                 sub_assembly_qty:
                     assembly_sub.filter((as: any) => as.uid == sub.sub_assembly_id)[0].qty,
@@ -761,6 +783,7 @@ export class AssemblyService {
                 main_assembly_name: sub.main_assembly_name,
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty,
                 main_assembly_qty: sub.main_assembly_qty,
                 order
@@ -797,6 +820,7 @@ export class AssemblyService {
                 section_assembly_name: sub.section_assembly_name,
                 part_id: sub.part_id,
                 part_name: sub.part_name,
+                part_code: sub.part_code,
                 qty: sub.qty,
                 order
             })

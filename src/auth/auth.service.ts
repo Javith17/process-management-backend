@@ -44,6 +44,7 @@ export class AuthService {
         const result = await this.productionMachinePartRepo.createQueryBuilder('production_part')
             .select([
                 'production_part.part_name',
+                'production_part.part_code',
                 'production_part.process_name',
                 'production_part.vendor_name',
                 'production_part.order_qty',
@@ -59,6 +60,7 @@ export class AuthService {
             .select([
                 'production_part.id',
                 'production_part.part_name',
+                'production_part.part_code',
                 'production_part.process_name',
                 'production_part.vendor_name',
                 'production_part.order_qty',

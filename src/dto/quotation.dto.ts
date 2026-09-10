@@ -318,3 +318,82 @@ export class ReviseMachineQuotationDto {
     @IsArray()
     quotation_terms: Array<string>;
 }
+
+export class GenerateDeliveryChallanDto {
+    @IsString()
+    @IsNotEmpty()
+    order_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    part_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    vendor_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    challan_date: string;
+
+    @IsString()
+    @IsNotEmpty()
+    dispatch_mode: string;
+
+    @IsString()
+    @IsOptional()
+    vehicle_no: string;
+
+    @IsString()
+    @IsNotEmpty()
+    total_value: string;
+
+    @IsString()
+    created_by: UUID;
+}
+
+export class RecordVendorProcessPaymentDto {
+    @IsString()
+    @IsNotEmpty()
+    production_part_id: UUID;
+
+    @IsNumber()
+    @IsNotEmpty()
+    paid_amount: number;
+
+    @IsString()
+    @IsOptional()
+    mode: string;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+
+    @IsString()
+    paid_by: UUID;
+}
+
+export class UploadVendorInvoiceDto {
+    @IsString()
+    @IsOptional()
+    order_id: UUID;
+
+    @IsString()
+    @IsOptional()
+    vendor_id: UUID;
+
+    @IsString()
+    @IsOptional()
+    machine_id: UUID;
+
+    @IsString()
+    @IsOptional()
+    part_id: UUID;
+
+    @IsString()
+    @IsOptional()
+    process: string;
+
+    @IsString()
+    uploaded_by: UUID;
+}

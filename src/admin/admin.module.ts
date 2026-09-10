@@ -19,12 +19,13 @@ import { EnquiryEntity } from "src/model/enquiry.entity";
 import { QuotationModule } from "src/quotation/quotation.module";
 import { NotificationService } from "src/common/notification.service";
 import { FirebaseProvider } from "src/common/firebase.provider";
+import { VendorPaymentEntity } from "src/model/vendor_payment.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([RoleEntity, UserEntity, ProcessEntity, VendorEntity, 
+    imports: [TypeOrmModule.forFeature([RoleEntity, UserEntity, ProcessEntity, VendorEntity,
         VendorProcessEntity, SupplierEntity, CustomerEntity, PartProcessEntity, PartProcessVendorEntity,
         PartEntity, ProductionMachinePartEntity, ProductionMachineBoughtoutEntity, OrderConfirmationEntity,
-        EnquiryEntity]), QuotationModule],
+        EnquiryEntity, VendorPaymentEntity]), QuotationModule],
     controllers: [AdminController],
     providers: [AdminService, FirebaseProvider, NotificationService]
   })

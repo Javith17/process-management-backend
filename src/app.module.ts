@@ -49,6 +49,9 @@ import { EnquiryEntity } from './model/enquiry.entity';
 import { FirebaseProvider } from './common/firebase.provider';
 import { AttendanceEntity } from './model/attendance.entity';
 import { LeaveRequestEntity } from './model/leave_request.entity';
+import { DeliveryChallanEntity } from './model/delivery_challan.entity';
+import { VendorPaymentEntity } from './model/vendor_payment.entity';
+import { VendorProcessInvoiceEntity } from './model/vendor_process_invoice.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -68,7 +71,8 @@ ConfigModule.forRoot()
         OrderConfirmationEntity, ProductionMachinePartEntity, VendorQuotationEntity, SupplierQuotationEntity,
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
         PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
-        SparesQuotationEntity, EnquiryEntity, AttendanceEntity, LeaveRequestEntity],
+        SparesQuotationEntity, EnquiryEntity, AttendanceEntity, LeaveRequestEntity, DeliveryChallanEntity,
+        VendorPaymentEntity, VendorProcessInvoiceEntity],
       synchronize: true,
     }),
     MulterModule.register({

@@ -12,6 +12,10 @@ export class CreatePart {
     @IsNotEmpty()
     part_name:string;
 
+    @IsString()
+    @IsOptional()
+    part_code:string;
+
     @IsNumber()
     minimum_stock_qty:number;
 
@@ -398,6 +402,10 @@ export class UpdatePartDto {
 
     @IsString()
     part_name: UUID;
+
+    @IsString()
+    @IsOptional()
+    part_code: string;
 
     @IsBoolean()
     is_machine: boolean;

@@ -16,6 +16,9 @@ export abstract class ProductionMachinePartEntity extends BaseEntity{
     part_name:string;
 
     @Column({ nullable: true })
+    part_code:string;
+
+    @Column({ nullable: true })
     vendor_id:string;
     
     @Column({ nullable: true })
@@ -68,6 +71,12 @@ export abstract class ProductionMachinePartEntity extends BaseEntity{
 
     @Column({ nullable: true })
     vendor_accept_at: Date;
+
+    @Column({ nullable: true })
+    challan_no: string;
+
+    @Column({ nullable: true })
+    dc_id: string;
 
     @ManyToOne(() => OrderConfirmationEntity, (order) => order.id)
     @JoinColumn({name: 'order_id'})

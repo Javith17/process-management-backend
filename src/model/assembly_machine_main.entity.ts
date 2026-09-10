@@ -25,6 +25,9 @@ export abstract class AssemblyMachineMainEntity extends BaseEntity {
     part_name: string;
 
     @Column({ nullable: true })
+    part_code: string;
+
+    @Column({ nullable: true })
     bought_out_id: string;
 
     @Column({ nullable: true })

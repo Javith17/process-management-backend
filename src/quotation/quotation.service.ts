@@ -465,6 +465,7 @@ export class QuotationService {
                 'vendor.vendor_name',
                 'part.id',
                 'part.part_name',
+                'part.part_code',
                 'vendor_quotation.data',
                 'vendor_quotation.status'
             ])
@@ -760,7 +761,7 @@ export class QuotationService {
         const machineObj = await this.machineRepository.findOne({ where: { id: approvedQuotation.machine_id } })
         const customerObj = await this.customerRepository.findOne({ where: { id: approvedQuotation.customer_id } })
 
-        const parts: Array<{ id: string, name: string, qty: number, process?: any }> = []
+        const parts: Array<{ id: string, name: string, code?: string, qty: number, process?: any }> = []
         const boughtouts: Array<{ id: string, name: string, qty: number }> = []
 
         const orderConfirmation = await this.orderConfirmationRepository.save({
@@ -816,6 +817,7 @@ export class QuotationService {
 
                 'section_part.id',
                 'section_part.part_name',
+                'section_part.part_code',
 
                 'section_part_process_list.id',
                 'section_part_process.id',
@@ -833,6 +835,7 @@ export class QuotationService {
 
                 'sub_assembly_part.id',
                 'sub_assembly_part.part_name',
+                'sub_assembly_part.part_code',
 
                 'sub_assembly_part_process_list.id',
                 'sub_assembly_part_process.id',
@@ -846,6 +849,7 @@ export class QuotationService {
 
                 'main_assembly_part.id',
                 'main_assembly_part.part_name',
+                'main_assembly_part.part_code',
 
                 'main_assembly_part_process_list.id',
                 'main_assembly_part_process.id',
@@ -861,6 +865,7 @@ export class QuotationService {
 
                 'main_assembly_sub_part.id',
                 'main_assembly_sub_part.part_name',
+                'main_assembly_sub_part.part_code',
 
                 'main_assembly_sub_detail_part_process_list.id',
                 'main_assembly_sub_detail_part_process.id',
@@ -881,12 +886,12 @@ export class QuotationService {
                         const p = parts.findIndex((f) => f.id == sb.part.id)
                         if (p < 0) {
                             parts.push({
-                                id: sb.part.id, name: sb.part.part_name, qty: sb.qty * sd_qty, process: sb.part.part_process_list.map((pl: any) => {
+                                id: sb.part.id, name: sb.part.part_name, code: sb.part.part_code, qty: sb.qty * sd_qty, process: sb.part.part_process_list.map((pl: any) => {
                                     return { id: pl.process.id, process: pl.process.process_name }
                                 })
                             })
                         } else {
-                            parts[p] = { id: sb.part.id, name: sb.part.part_name, qty: (sb.qty * sd_qty) + parts[p].qty, process: parts[p].process }
+                            parts[p] = { id: sb.part.id, name: sb.part.part_name, code: sb.part.part_code, qty: (sb.qty * sd_qty) + parts[p].qty, process: parts[p].process }
                         }
                     } else if (sb.bought_out) {
                         const b = boughtouts.findIndex((f) => f.id == sb.bought_out.id)
@@ -907,12 +912,12 @@ export class QuotationService {
                                 const p = parts.findIndex((f) => f.id == msb.part.id)
                                 if (p < 0) {
                                     parts.push({
-                                        id: msb.part.id, name: msb.part.part_name, qty: msb.qty * sds_qty, process: msb.part.part_process_list.map((pl: any) => {
+                                        id: msb.part.id, name: msb.part.part_name, code: msb.part.part_code, qty: msb.qty * sds_qty, process: msb.part.part_process_list.map((pl: any) => {
                                             return { id: pl.process.id, process: pl.process.process_name }
                                         })
                                     })
                                 } else {
-                                    parts[p] = { id: msb.part.id, name: msb.part.part_name, qty: (msb.qty * sds_qty) + parts[p].qty, process: parts[p].process }
+                                    parts[p] = { id: msb.part.id, name: msb.part.part_name, code: msb.part.part_code, qty: (msb.qty * sds_qty) + parts[p].qty, process: parts[p].process }
                                 }
                             } else if (msb.bought_out) {
                                 const b = boughtouts.findIndex((f) => f.id == msb.bought_out.id)
@@ -928,12 +933,12 @@ export class QuotationService {
                             const p = parts.findIndex((f) => f.id == sdb.part.id)
                             if (p < 0) {
                                 parts.push({
-                                    id: sdb.part.id, name: sdb.part.part_name, qty: sdb.qty * sdm_qty, process: sdb.part.part_process_list.map((pl: any) => {
+                                    id: sdb.part.id, name: sdb.part.part_name, code: sdb.part.part_code, qty: sdb.qty * sdm_qty, process: sdb.part.part_process_list.map((pl: any) => {
                                         return { id: pl.process.id, process: pl.process.process_name }
                                     })
                                 })
                             } else {
-                                parts[p] = { id: sdb.part.id, name: sdb.part.part_name, qty: (sdb.qty * sdm_qty) + parts[p].qty, process: parts[p].process }
+                                parts[p] = { id: sdb.part.id, name: sdb.part.part_name, code: sdb.part.part_code, qty: (sdb.qty * sdm_qty) + parts[p].qty, process: parts[p].process }
                             }
                         } else if (sdb.bought_out) {
                             const b = boughtouts.findIndex((f) => f.id == sdb.bought_out.id)
@@ -949,12 +954,12 @@ export class QuotationService {
                 const p = parts.findIndex((f) => f.id == sd.part.id)
                 if (p < 0) {
                     parts.push({
-                        id: sd.part.id, name: sd.part.part_name, qty: sd.qty, process: sd.part.part_process_list.map((pl: any) => {
+                        id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: sd.qty, process: sd.part.part_process_list.map((pl: any) => {
                             return { id: pl.process.id, process: pl.process.process_name }
                         })
                     })
                 } else {
-                    parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: sd.qty + parts[p].qty, process: parts[p].process }
+                    parts[p] = { id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: sd.qty + parts[p].qty, process: parts[p].process }
                 }
             } else if (sd.bought_out) {
                 const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
@@ -994,6 +999,7 @@ export class QuotationService {
                 await this.productionMachinePartRepo.save({
                     part_id: part.id,
                     part_name: part.name,
+                    part_code: part.code,
                     process_id: process.id,
                     process_name: process.process,
                     required_qty: part.qty,
@@ -1023,9 +1029,9 @@ export class QuotationService {
         const machineObj = await this.machineRepository.findOne({ where: { id: approvedQuotation.machine_id } })
         const customerObj = await this.customerRepository.findOne({ where: { id: approvedQuotation.customer_id } })
 
-        const parts: Array<{ id: string, name: string, qty: number, process?: any }> = []
+        const parts: Array<{ id: string, name: string, code?: string, qty: number, process?: any }> = []
         const boughtouts: Array<{ id: string, name: string, qty: number }> = []
-        
+
         const spares = JSON.parse(approvedQuotation.spares)
         
         const orderConfirmation = await this.orderConfirmationRepository.save({
@@ -1060,12 +1066,12 @@ export class QuotationService {
                 const p = parts.findIndex((f) => f.id == part.id)
                     if (p < 0) {
                         parts.push({
-                            id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty), process: part.part_process_list.map((pl: any) => {
+                            id: part.id, name: part.part_name, code: part.part_code, qty: Number(subSpare.spare_qty), process: part.part_process_list.map((pl: any) => {
                                 return { id: pl.process.id, process: pl.process.process_name }
                             })
                         })
                     } else {
-                        parts[p] = { id: part.id, name: part.part_name, qty: Number(subSpare.spare_qty) + Number(parts[p].qty), process: parts[p].process }
+                        parts[p] = { id: part.id, name: part.part_name, code: part.part_code, qty: Number(subSpare.spare_qty) + Number(parts[p].qty), process: parts[p].process }
                     }
             })
         }
@@ -1087,12 +1093,12 @@ export class QuotationService {
                         const p = parts.findIndex((f) => f.id == sd.part.id)
                         if (p < 0) {
                             parts.push({
-                                id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
+                                id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
                                     return { id: pl.process.id, process: pl.process.process_name }
                                 })
                             })
                         } else {
-                            parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
+                            parts[p] = { id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
                         }
                     }else if(sd.bought_out){
                         const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
@@ -1132,12 +1138,12 @@ export class QuotationService {
                         const p = parts.findIndex((f) => f.id == sd.part.id)
                         if (p < 0) {
                             parts.push({
-                                id: sd.part.id, name: sd.part.part_name, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
+                                id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: Number(sd.qty) * Number(subSpare.spare_qty), process: sd.part.part_process_list.map((pl: any) => {
                                     return { id: pl.process.id, process: pl.process.process_name }
                                 })
                             })
                         } else {
-                            parts[p] = { id: sd.part.id, name: sd.part.part_name, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
+                            parts[p] = { id: sd.part.id, name: sd.part.part_name, code: sd.part.part_code, qty: (Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), process: parts[p].process }
                         }
                     }else if(sd.bought_out){
                         const b = boughtouts.findIndex((f) => f.id == sd.bought_out.id)
@@ -1152,15 +1158,15 @@ export class QuotationService {
                                 const p = parts.findIndex((f) => f.id == sad.part.id)
                                 if (p < 0) {
                                     parts.push({
-                                        id: sad.part.id, name: sad.part.part_name, 
-                                        qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty), 
+                                        id: sad.part.id, name: sad.part.part_name, code: sad.part.part_code,
+                                        qty: Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty),
                                         process: sad.part.part_process_list.map((pl: any) => {
                                             return { id: pl.process.id, process: pl.process.process_name }
                                         })
                                     })
                                 } else {
-                                    parts[p] = { id: sad.part.id, name: sad.part.part_name, 
-                                        qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty), 
+                                    parts[p] = { id: sad.part.id, name: sad.part.part_name, code: sad.part.part_code,
+                                        qty: (Number(sad.qty) * Number(sd.qty) * Number(subSpare.spare_qty)) + Number(parts[p].qty),
                                         process: parts[p].process }
                                 }
                             }else if(sad.bought_out){
@@ -1207,6 +1213,7 @@ export class QuotationService {
                 await this.productionMachinePartRepo.save({
                     part_id: part.id,
                     part_name: part.name,
+                    part_code: part.code,
                     process_id: process.id,
                     process_name: process.process,
                     required_qty: part.qty,

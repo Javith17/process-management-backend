@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { quotation_terms } from 'src/common/constants';
 import { NotificationService } from 'src/common/notification.service';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword, VendorPaymentDto } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -21,6 +21,7 @@ import { SupplierEntity } from 'src/model/supplier.entity';
 import { UserEntity } from 'src/model/user.entity';
 import { VendorEntity } from 'src/model/vendor.entity';
 import { VendorProcessEntity } from 'src/model/vendorProcess.entity';
+import { VendorPaymentEntity } from 'src/model/vendor_payment.entity';
 import { QuotationService } from 'src/quotation/quotation.service';
 import { Repository } from 'typeorm';
 
@@ -42,6 +43,7 @@ export class AdminService {
         @InjectRepository(ProductionMachineBoughtoutEntity) private supplierBORepo: Repository<ProductionMachineBoughtoutEntity>,
         @InjectRepository(OrderConfirmationEntity) private orderConfimationRepo: Repository<OrderConfirmationEntity>,
         @InjectRepository(EnquiryEntity) private enquiryRepo: Repository<EnquiryEntity>,
+        @InjectRepository(VendorPaymentEntity) private vendorPaymentRepo: Repository<VendorPaymentEntity>,
         private quotationService: QuotationService,
         private notificationService: NotificationService
     ) { }
@@ -478,6 +480,33 @@ export class AdminService {
         throw new HttpException("No supplier found", HttpStatus.NOT_FOUND)
     }
 
+    async makeVendorPayment(vendorPaymentDto: VendorPaymentDto) {
+        const vendor = await this.vendorRepository.findOne({ where: { id: vendorPaymentDto.vendor_id } })
+        if (!vendor) {
+            throw new HttpException("Vendor not found", HttpStatus.NOT_FOUND)
+        }
+
+        const remainingPending = Math.max(0, (Number(vendor.pending_payment) || 0) - Number(vendorPaymentDto.paid_amount))
+
+        await this.vendorRepository.createQueryBuilder()
+            .update(VendorEntity)
+            .set({ pending_payment: String(remainingPending) })
+            .where('id = :id', { id: vendor.id })
+            .execute()
+
+        if (Number(vendorPaymentDto.paid_amount) > 0) {
+            await this.vendorPaymentRepo.save({
+                vendor_id: vendorPaymentDto.vendor_id,
+                paid_amount: String(vendorPaymentDto.paid_amount),
+                mode: vendorPaymentDto.mode,
+                remarks: vendorPaymentDto.remarks,
+                paid_by: vendorPaymentDto.paid_by
+            })
+        }
+
+        return { message: 'Vendor payment recorded successfully' }
+    }
+
     async createNewSupplier(supplierDto: CreateSupplier) {
         const supplier = await this.supplierRepository.find({ select: ['id', 'supplier_name'], where: { is_active: true, supplier_name: supplierDto.supplier_name } })
         if (supplier.length > 0) {
@@ -633,7 +662,7 @@ export class AdminService {
 
     async getVendorHistory(pagination: Pagination) {
         let query = this.vendorPartRepo.createQueryBuilder('vp')
-            .select(['vp.id', 'order.machine_name', 'vp.part_name',
+            .select(['vp.id', 'order.machine_name', 'vp.part_name', 'vp.part_code',
                 'vp.process_name', 'quotation.quotation_no', 'vp.status', 'order.status'])
             .innerJoin('vp.order', 'order')
             .innerJoin('order.quotation', 'quotation')

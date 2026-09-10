@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, UseIntercept
 import { UUID } from 'crypto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword } from 'src/dto/admin.dto';
+import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword, VendorPaymentDto } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
 import { AdminService } from './admin.service';
 
@@ -110,6 +110,11 @@ export class AdminController {
     @Get('/vendorsList')
     getVendors(@Query() pagination: Pagination){
         return this.adminService.getVendorsList(pagination)
+    }
+
+    @Post('/vendorPayment')
+    makeVendorPayment(@Body() vendorPaymentDto: VendorPaymentDto){
+        return this.adminService.makeVendorPayment(vendorPaymentDto)
     }
 
     @Post('/createSupplier')

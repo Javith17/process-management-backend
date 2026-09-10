@@ -8,6 +8,9 @@ export abstract class PartEntity extends BaseEntity{
     @Column({ unique: true })
     part_name:string;
 
+    @Column({ unique: true, nullable: true })
+    part_code:string;
+
     @Column({ nullable:true })
     minimum_stock_qty:number;
 
