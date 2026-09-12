@@ -5,8 +5,6 @@ import { quotation_terms } from 'src/common/constants';
 import { NotificationService } from 'src/common/notification.service';
 import { CreateCustomer, CreateEnquiry, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, DeleteByIdDto, UpdateEnquiryStatus, UpdateNotificationToken,UpdateProcess,UpdateUserDto, UpdateUserPassword, VendorPaymentDto } from 'src/dto/admin.dto';
 import { Pagination } from 'src/dto/pagination.dto';
-import { BoughtOutEntity } from 'src/model/bought_out.entity';
-import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
 import { CustomerEntity } from 'src/model/customer.entity';
 import { EnquiryEntity } from 'src/model/enquiry.entity';
 import { OrderConfirmationEntity } from 'src/model/order_confirmation.entity';
@@ -258,6 +256,15 @@ export class AdminService {
         }
     }
 
+    async deleteProcess(deleteProcessDto: DeleteByIdDto) {
+        const process = await this.processRepository.findOne({ where: { id: deleteProcessDto.id as UUID } });
+        if (!process) {
+            return { message: "Process not found" }
+        }
+        await this.processRepository.update(deleteProcessDto.id as UUID, { is_active: false } as Partial<ProcessEntity>);
+        return { message: "Process deleted successfully" }
+    }
+
     async createNewVendor(vendorDto: CreateVendor) {
         const existingVendor = await this.vendorRepository.find({ select: ['id', 'vendor_name'], where: { is_active: true, vendor_name: vendorDto.vendor_name } })
 
@@ -438,8 +445,12 @@ export class AdminService {
 
     async getVendorsList(pagination: Pagination) {
         try {
+            // No join to vendor_process here: a vendor can have many process_list rows,
+            // so joining directly (as this used to, via innerJoinAndSelect — which also
+            // wrongly excluded vendors with zero processes) fans out multiple rows per
+            // vendor before pagination, corrupting take()/skip()/count. An EXISTS
+            // subquery lets search match on process name without multiplying rows.
             let query = this.vendorRepository.createQueryBuilder('vendor')
-                .innerJoinAndSelect('vendor.process_list', 'process')
                 .select(['vendor.id', 'vendor.vendor_name',
                     'vendor.vendor_address1', 'vendor.vendor_address2',
                     'vendor.vendor_gst', 'vendor.vendor_account_no', 'vendor.vendor_bank_name',
@@ -448,16 +459,22 @@ export class AdminService {
                     'vendor.vendor_location'])
                 .where('vendor.is_active = :isActive', { isActive: true })
 
+            if (pagination?.search) {
+                query = query.andWhere(
+                    `(LOWER(vendor.vendor_name) LIKE :search OR EXISTS (
+                        SELECT 1 FROM vendorprocess vp
+                        WHERE vp.vendor_id = vendor.id AND LOWER(vp.process_name) LIKE :search
+                    ))`,
+                    { search: `%${pagination.search.toLowerCase()}%` }
+                )
+            }
+
             if (pagination?.page) {
                 query = query
                     .take(pagination.limit)
                     .skip((pagination.page - 1) * pagination.limit)
             }
 
-            if (pagination?.search) {
-                query = query.andWhere('LOWER(vendor.vendor_name) LIKE :vendorName', { vendorName: `%${pagination.search.toLowerCase()}%` })
-                query = query.orWhere('LOWER(process.process_name) LIKE :processName', { processName: `%${pagination.search.toLowerCase()}%` })
-            }
             const [list, count] = await query.getManyAndCount()
             return { list, count }
 
@@ -517,27 +534,38 @@ export class AdminService {
     }
 
     async getSuppliers(input: { page?: number, limit?: number, search?: string }) {
+        // Deliberately no join to bought_out_supplier/bought_out here: a supplier can
+        // have multiple bought_out_supplier rows (one per boughtout item they supply),
+        // so joining directly would fan out multiple rows per supplier and corrupt
+        // .limit()/.offset()/count (a supplier could consume several slots of the page
+        // window, or getManyAndCount()'s count query and entities query could disagree
+        // on the row count). An EXISTS subquery lets search match on boughtout name
+        // without ever multiplying the base suppliers row set.
         let query = this.supplierRepository.createQueryBuilder('suppliers')
-            .leftJoin(BoughtOutSuppliertEntity, 'boughtout_supplier', 'boughtout_supplier.supplier_id = suppliers.id ')
-            .leftJoin(BoughtOutEntity, 'boughtout', 'boughtout.id = boughtout_supplier.bought_out_id')
             .select(['suppliers.id', 'suppliers.supplier_name', 'suppliers.supplier_address1',
                 'suppliers.supplier_address2', 'suppliers.supplier_mobile_no1',
                 'suppliers.supplier_mobile_no2', 'suppliers.supplier_account_no',
                 'suppliers.supplier_bank_name', 'suppliers.supplier_ifsc',
                 'suppliers.supplier_location', 'suppliers.supplier_city',
                 'suppliers.supplier_state', 'suppliers.supplier_pincode',
-                'suppliers.supplier_gst'])
+                'suppliers.supplier_gst', 'suppliers.pending_payment'])
             .where({ is_active: true })
+
+        if (input?.search) {
+            query = query.andWhere(
+                `(LOWER(suppliers.supplier_name) LIKE :search OR EXISTS (
+                    SELECT 1 FROM bought_out_supplier bs
+                    INNER JOIN bought_out bo ON bo.id = bs.bought_out_id
+                    WHERE bs.supplier_id = suppliers.id AND LOWER(bo.bought_out_name) LIKE :search
+                ))`,
+                { search: `%${input.search.toLowerCase()}%` }
+            )
+        }
 
         if (input?.page) {
             query = query
                 .limit(input.limit)
                 .offset((input.page - 1) * input.limit)
-        }
-
-        if (input?.search) {
-            query = query.andWhere('LOWER(suppliers.supplier_name) LIKE :supplierName', { supplierName: `%${input.search.toLowerCase()}%` })
-            query = query.orWhere('LOWER(boughtout.bought_out_name) LIKE :boughtoutName', { boughtoutName: `%${input.search.toLowerCase()}%` })
         }
 
         const [list, count] = await query.getManyAndCount()

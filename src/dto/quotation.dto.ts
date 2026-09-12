@@ -86,8 +86,9 @@ export class UpdateProductionMachinePartDto {
     @IsString()
     vendor_name: string;
 
-    // @IsString()
-    // delivery_date: string;
+    @IsOptional()
+    @IsString()
+    delivery_date: string;
 
     // @IsString()
     // reminder_date: string;
@@ -229,7 +230,7 @@ export class SupplierQuotationDto {
 
     @IsString()
     @IsNotEmpty()
-    boughtout_id: UUID;
+    bought_out_id: UUID;
 
     @IsString()
     remarks: string;
@@ -260,11 +261,13 @@ export class UpdateProductionMachineBODto {
     @IsString()
     supplier_name: string;
 
-    // @IsString()
-    // delivery_date: string;
+    @IsString()
+    @IsOptional()
+    delivery_date: string;
 
-    // @IsString()
-    // reminder_date: string;
+    @IsString()
+    @IsOptional()
+    reminder_date: string;
 
     @IsString()
     status: string;
@@ -291,6 +294,27 @@ export class UpdateBoughtoutPaymentDto {
 
     @IsString()
     created_by: UUID;
+}
+
+export class RecordSupplierPaymentDto {
+    @IsString()
+    @IsNotEmpty()
+    production_boughtout_id: UUID;
+
+    @IsNumber()
+    @IsNotEmpty()
+    paid_amount: number;
+
+    @IsString()
+    @IsOptional()
+    mode: string;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+
+    @IsString()
+    paid_by: UUID;
 }
 
 export class ReviseMachineQuotationDto {
@@ -347,6 +371,67 @@ export class GenerateDeliveryChallanDto {
     @IsString()
     @IsNotEmpty()
     total_value: string;
+
+    @IsString()
+    created_by: UUID;
+}
+
+export class PurchaseOrderLineItemDto {
+    @IsString()
+    @IsOptional()
+    production_boughtout_id: UUID;
+
+    @IsString()
+    description: string;
+
+    @IsNumber()
+    qty: number;
+
+    @IsString()
+    @IsOptional()
+    uom: string;
+
+    @IsNumber()
+    rate: number;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+}
+
+export class GeneratePurchaseOrderDto {
+    @IsString()
+    @IsNotEmpty()
+    order_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    supplier_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    po_date: string;
+
+    @IsString()
+    @IsOptional()
+    reference_doc_no: string;
+
+    @IsString()
+    @IsOptional()
+    payment_terms: string;
+
+    @IsString()
+    @IsOptional()
+    delivery_schedule: string;
+
+    @IsNumber()
+    gst_percent: number;
+
+    @IsArray()
+    line_items: Array<PurchaseOrderLineItemDto>;
+
+    @IsArray()
+    terms: Array<string>;
 
     @IsString()
     created_by: UUID;

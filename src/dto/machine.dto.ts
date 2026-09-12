@@ -428,6 +428,14 @@ export class VendorAttachmentDto {
     part_id: UUID;
 }
 
+export class SupplierAttachmentDto {
+    @IsString()
+    supplier_id: UUID;
+
+    @IsString()
+    bought_out_id: UUID;
+}
+
 export class PartsByMachines {
     @IsArray()
     machines: string[]

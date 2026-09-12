@@ -78,13 +78,18 @@ export class AdminController {
     }
 
     @Post('/updateProcess')
-    updateProcess(@Body() createProcess: UpdateProcess){
-        return this.adminService.createProcess(createProcess)
+    updateProcess(@Body() updateProcess: UpdateProcess){
+        return this.adminService.updateProcess(updateProcess)
     }
 
     @Get('/processList')
     getProcessList(@Query() pagination: Pagination){
         return this.adminService.getAllProcess(pagination)
+    }
+
+    @Post('/deleteProcess')
+    deleteProcess(@Body() deleteProcessDto: DeleteByIdDto){
+        return this.adminService.deleteProcess(deleteProcessDto)
     }
 
     @Post('/createVendor')

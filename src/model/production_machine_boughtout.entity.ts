@@ -51,6 +51,24 @@ export abstract class ProductionMachineBoughtoutEntity extends BaseEntity{
     @Column({ nullable: true })
     remarks:string;
 
+    @Column({ nullable: true })
+    supplier_accept_status: string;
+
+    @Column({ nullable: true })
+    supplier_accept_remarks: string;
+
+    @Column({ nullable: true })
+    supplier_accept_at: Date;
+
+    @Column({ nullable: true, default: '0' })
+    paid_amount: string;
+
+    @Column({ nullable: true })
+    po_no: string;
+
+    @Column({ nullable: true })
+    po_id: string;
+
     @ManyToOne(() => OrderConfirmationEntity, (order) => order.id)
     @JoinColumn({name: 'order_id'})
     order: OrderConfirmationEntity;

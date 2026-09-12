@@ -29,6 +29,8 @@ import { AssemblyMachineSectionEntity } from "src/model/assembly_machine_section
 import { DeliveryChallanEntity } from "src/model/delivery_challan.entity";
 import { VendorPaymentEntity } from "src/model/vendor_payment.entity";
 import { VendorProcessInvoiceEntity } from "src/model/vendor_process_invoice.entity";
+import { SupplierPaymentEntity } from "src/model/supplier_payment.entity";
+import { PurchaseOrderEntity } from "src/model/purchase_order.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -38,7 +40,8 @@ import { VendorProcessInvoiceEntity } from "src/model/vendor_process_invoice.ent
       ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
       VendorEntity, MachineEntity, CustomerEntity, OrderConfirmationEntity,
       AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
-      DeliveryChallanEntity, VendorPaymentEntity, VendorProcessInvoiceEntity])],
+      DeliveryChallanEntity, VendorPaymentEntity, VendorProcessInvoiceEntity,
+      SupplierEntity, SupplierPaymentEntity, PurchaseOrderEntity])],
     controllers: [OrderController],
     providers: [OrderService]
   })

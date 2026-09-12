@@ -4,7 +4,7 @@ import { UUID } from 'crypto';
 import { Response } from 'express';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { AuthInterceptor } from 'src/auth/middleware/interceptor.middleware';
-import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, DeleteMachineDto, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
+import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, DeleteMachineDto, FileDto, PartsByMachines, SupplierAttachmentDto, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
 import { CheckNameDto, Pagination, RemoveAttachmentDto } from 'src/dto/pagination.dto';
 import { MachineService } from './machine.service';
 import multer, { diskStorage } from 'multer';
@@ -213,6 +213,11 @@ export class MachineController {
     @Post('/vendorAttachment')
     async vendorAttachment(@Body() vendorAttachmentDto: VendorAttachmentDto){
         return this.machineService.vendorAttachment(vendorAttachmentDto)
+    }
+
+    @Post('/supplierAttachment')
+    async supplierAttachment(@Body() supplierAttachmentDto: SupplierAttachmentDto){
+        return this.machineService.supplierAttachment(supplierAttachmentDto)
     }
 
     @Post('/imageUpload')

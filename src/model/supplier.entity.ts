@@ -44,4 +44,7 @@ export abstract class SupplierEntity extends BaseEntity{
 
     @Column({ nullable:true })
     supplier_location:string;
+
+    @Column({ nullable:true, default: '0' })
+    pending_payment:string;
 }

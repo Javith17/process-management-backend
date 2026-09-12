@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateCustomer, CreateProcess, CreateRole, CreateSupplier, CreateUser, CreateVendor, CreateVendorProcess, UpdateUserPassword } from 'src/dto/admin.dto';
-import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, DeleteMachineDto, FileDetailsDto, FileDto, PartsByMachines, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
+import { AddSubAssemblyMachine, CreateBoughtOut, CreateMachine, CreateMainAssembly, CreatePart, CreateSectionAssembly, CreateSubAssembly, DeleteMachineDto, FileDetailsDto, FileDto, PartsByMachines, SupplierAttachmentDto, UpdateAssemblyDetail, UpdateBoughtoutDto, UpdatePartDto, VendorAttachmentDto } from 'src/dto/machine.dto';
 import { CheckNameDto, Pagination, RemoveAttachmentDto } from 'src/dto/pagination.dto';
 import { BoughtOutEntity } from 'src/model/bought_out.entity';
 import { BoughtOutSuppliertEntity } from 'src/model/bought_out_supplier.entity';
@@ -370,9 +370,12 @@ export class MachineService {
 
     async getBoughtOutList(pagination: Pagination) {
         if(pagination.type == 'map'){
-            let query = await this.boughtOutRepository.createQueryBuilder('bought_out')
-            .leftJoinAndSelect('bought_out.bought_out_suppliers', 'bought_out_supplier')
-            .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
+            // Join is filter-only here (only bought_out.* columns are selected), so it's
+            // replaced with a NOT EXISTS subquery instead of joining bought_out_supplier
+            // directly -- a bought_out row can have many bought_out_supplier rows, and
+            // joining would fan out multiple rows per bought_out before limit()/offset()
+            // and count are computed, silently dropping rows from the page.
+            let query = this.boughtOutRepository.createQueryBuilder('bought_out')
             .select([
                 'bought_out.id',
                 'bought_out.bought_out_name',
@@ -381,52 +384,79 @@ export class MachineService {
                 'bought_out.is_spare'
             ])
 
+            if (pagination?.search) {
+                query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
+                query = query.andWhere(
+                    `NOT EXISTS (SELECT 1 FROM bought_out_supplier bs WHERE bs.bought_out_id = bought_out.id AND bs.supplier_id = :supplierId)`,
+                    { supplierId: pagination?.type_id }
+                )
+            }
+
             if (pagination?.page) {
                 query = query
                     .limit(pagination.limit)
                     .offset((pagination.page - 1) * pagination.limit)
-            }
-
-            if (pagination?.search) {
-                query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
-                query = query.andWhere('supplier.id NOT IN (:...id)', { id: [pagination?.type_id]}).orWhere('supplier.id IS NULL')
             }
 
             const [list, count] = await query.getManyAndCount()
             return { list, count }
         }else{
-            let query = await this.boughtOutRepository.createQueryBuilder('bought_out')
-            .leftJoinAndSelect('bought_out.bought_out_suppliers', 'bought_out_supplier')
-            .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
-            .select([
-                'bought_out.id',
-                'bought_out.bought_out_name',
-                'bought_out.days',
-                'bought_out.is_machine',
-                'bought_out.is_spm',
-                'bought_out.is_spare',
-                'bought_out.bought_out_category',
-                'bought_out_supplier.cost',
-                'bought_out_supplier.delivery_time',
-                'supplier.id',
-                'supplier.supplier_name'
-            ])
+            // bought_out_supplier/supplier data IS returned here (cost, delivery_time,
+            // supplier name), so unlike the branch above we can't just drop the join --
+            // the UI needs it. But a bought_out with multiple suppliers still fans out
+            // multiple rows per bought_out, which corrupts limit()/offset()/count the
+            // same way. Fix: paginate bought_out ids first with a clean, join-free query,
+            // then hydrate full supplier details for just that page of ids (unbounded,
+            // no limit/offset, so the join can't interact badly with pagination there).
+            let idQuery = this.boughtOutRepository.createQueryBuilder('bought_out')
+                .select(['bought_out.id'])
+
+            if (pagination?.search) {
+                idQuery = idQuery.andWhere(
+                    `(LOWER(bought_out.bought_out_name) LIKE :search OR EXISTS (
+                        SELECT 1 FROM bought_out_supplier bs
+                        INNER JOIN suppliers s ON s.id = bs.supplier_id
+                        WHERE bs.bought_out_id = bought_out.id AND LOWER(s.supplier_name) LIKE :search
+                    ))`,
+                    { search: `%${pagination.search.toLowerCase()}%` }
+                )
+            }
 
             if (pagination?.page) {
-                query = query
+                idQuery = idQuery
                     .limit(pagination.limit)
                     .offset((pagination.page - 1) * pagination.limit)
             }
 
-            if (pagination?.search) {
-                query = query.andWhere('LOWER(bought_out.bought_out_name) LIKE :boughtOutName', { boughtOutName: `%${pagination.search.toLowerCase()}%` })
-                query = query.orWhere('LOWER(supplier.supplier_name) LIKE :supplierName', { supplierName: `%${pagination.search.toLowerCase()}%` })
+            const [idRows, count] = await idQuery.getManyAndCount()
+            const ids = idRows.map((row) => row.id)
+            if (ids.length === 0) {
+                return { list: [], count }
             }
 
-            const [list, count] = await query.getManyAndCount()
+            const hydrated = await this.boughtOutRepository.createQueryBuilder('bought_out')
+                .leftJoinAndSelect('bought_out.bought_out_suppliers', 'bought_out_supplier')
+                .leftJoinAndSelect('bought_out_supplier.supplier', 'supplier')
+                .select([
+                    'bought_out.id',
+                    'bought_out.bought_out_name',
+                    'bought_out.days',
+                    'bought_out.is_machine',
+                    'bought_out.is_spm',
+                    'bought_out.is_spare',
+                    'bought_out.bought_out_category',
+                    'bought_out_supplier.cost',
+                    'bought_out_supplier.delivery_time',
+                    'supplier.id',
+                    'supplier.supplier_name'
+                ])
+                .where('bought_out.id IN (:...ids)', { ids })
+                .getMany()
+
+            const list = ids.map((id) => hydrated.find((b) => b.id === id)).filter((b) => b)
             return { list, count }
         }
-        
+
     }
 
     async getBoughtoutListByMachine(boughtoutByMachineDto: PartsByMachines) {
@@ -626,7 +656,31 @@ export class MachineService {
     }
 
     async getSubAssemblyList(pagination: Pagination) {
-        let query = await this.subAssemblyRepository.createQueryBuilder('sub_assembly')
+        // sub_assembly_detail (and its part/bought_out) is returned for display, so the
+        // join can't just be dropped -- but a sub_assembly with multiple detail rows
+        // fans out multiple rows per sub_assembly, corrupting limit()/offset()/count.
+        // Fix: paginate sub_assembly ids first with a clean, join-free query, then
+        // hydrate full detail for just that page of ids (unbounded, no limit/offset).
+        let idQuery = this.subAssemblyRepository.createQueryBuilder('sub_assembly')
+            .select(['sub_assembly.id'])
+
+        if (pagination?.search) {
+            idQuery = idQuery.andWhere('LOWER(sub_assembly.sub_assembly_name) LIKE :subAssemblyName', { subAssemblyName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        if (pagination?.page) {
+            idQuery = idQuery
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [idRows, count] = await idQuery.getManyAndCount()
+        const ids = idRows.map((row) => row.id)
+        if (ids.length === 0) {
+            return { list: [], count }
+        }
+
+        const hydrated = await this.subAssemblyRepository.createQueryBuilder('sub_assembly')
             .leftJoinAndSelect('sub_assembly.sub_assembly_detail', 'sub_assembly_detail')
             .leftJoinAndSelect('sub_assembly_detail.part', 'parts')
             .leftJoinAndSelect('sub_assembly_detail.bought_out', 'bought_out')
@@ -644,18 +698,10 @@ export class MachineService {
                 'bought_out.bought_out_name',
                 'bought_out.days'
             ])
+            .where('sub_assembly.id IN (:...ids)', { ids })
+            .getMany()
 
-        if (pagination?.page) {
-            query = query
-                .limit(pagination.limit)
-                .offset((pagination.page - 1) * pagination.limit)
-        }
-
-        if (pagination?.search) {
-            query = query.andWhere('LOWER(sub_assembly.sub_assembly_name) LIKE :subAssemblyName', { subAssemblyName: `%${pagination.search.toLowerCase()}%` })
-        }
-
-        const [list, count] = await query.getManyAndCount()
+        const list = ids.map((id) => hydrated.find((s) => s.id === id)).filter((s) => s)
         return { list, count }
     }
 
@@ -707,7 +753,32 @@ export class MachineService {
     }
 
     async getMainAssemblyList(pagination: Pagination) {
-        let query = await this.mainAssemblyRepository.createQueryBuilder('main_assembly')
+        // main_assembly_detail (and its nested part/bought_out/sub_assembly/sub_assembly_detail)
+        // is returned for display, so the joins can't just be dropped -- but a main_assembly
+        // with multiple detail rows (and each of those with multiple nested rows) fans out
+        // multiple rows per main_assembly, corrupting limit()/offset()/count. Fix: paginate
+        // main_assembly ids first with a clean, join-free query, then hydrate full detail
+        // for just that page of ids (unbounded, no limit/offset).
+        let idQuery = this.mainAssemblyRepository.createQueryBuilder('main_assembly')
+            .select(['main_assembly.id'])
+
+        if (pagination?.search) {
+            idQuery = idQuery.andWhere('LOWER(main_assembly.main_assembly_name) LIKE :mainAssemblyName', { mainAssemblyName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        if (pagination?.page) {
+            idQuery = idQuery
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [idRows, count] = await idQuery.getManyAndCount()
+        const ids = idRows.map((row) => row.id)
+        if (ids.length === 0) {
+            return { list: [], count }
+        }
+
+        const hydrated = await this.mainAssemblyRepository.createQueryBuilder('main_assembly')
             .leftJoinAndSelect('main_assembly.main_assembly_detail', 'main_assembly_detail')
             .leftJoinAndSelect('main_assembly.machine', 'machine')
             .leftJoinAndSelect('main_assembly_detail.part', 'parts')
@@ -719,7 +790,6 @@ export class MachineService {
                 'main_assembly.id',
                 'main_assembly.main_assembly_name',
                 'main_assembly.serial_no',
-                // 'main_assembly.days',
                 'main_assembly_detail.id',
                 'main_assembly_detail.qty',
                 'parts.id',
@@ -737,18 +807,10 @@ export class MachineService {
                 'machine.id',
                 'machine.machine_name'
             ])
+            .where('main_assembly.id IN (:...ids)', { ids })
+            .getMany()
 
-        if (pagination?.page) {
-            query = query
-                .limit(pagination.limit)
-                .offset((pagination.page - 1) * pagination.limit)
-        }
-
-        if (pagination?.search) {
-            query = query.andWhere('LOWER(main_assembly.main_assembly_name) LIKE :mainAssemblyName', { mainAssemblyName: `%${pagination.search.toLowerCase()}%` })
-        }
-
-        const [list, count] = await query.getManyAndCount()
+        const list = ids.map((id) => hydrated.find((m) => m.id === id)).filter((m) => m)
         return { list, count }
     }
 
@@ -787,7 +849,33 @@ export class MachineService {
     }
 
     async getSectionAssemblyList(pagination: Pagination) {
-        let query = await this.sectionAssemblyRepository.createQueryBuilder('section_assembly')
+        // section_assembly_detail and its nested part/bought_out/sub_assembly/main_assembly
+        // (each themselves fanning out further) are returned for display, so the joins
+        // can't just be dropped -- but with 3+ levels of one-to-many joins chained, a
+        // section_assembly can explode into a large number of duplicate rows, corrupting
+        // limit()/offset()/count. Fix: paginate section_assembly ids first with a clean,
+        // join-free query, then hydrate full (deeply nested) detail for just that page of
+        // ids (unbounded, no limit/offset).
+        let idQuery = this.sectionAssemblyRepository.createQueryBuilder('section_assembly')
+            .select(['section_assembly.id'])
+
+        if (pagination?.search) {
+            idQuery = idQuery.andWhere('LOWER(section_assembly.section_assembly_name) LIKE :sectionAssemblyName', { sectionAssemblyName: `%${pagination.search.toLowerCase()}%` })
+        }
+
+        if (pagination?.page) {
+            idQuery = idQuery
+                .limit(pagination.limit)
+                .offset((pagination.page - 1) * pagination.limit)
+        }
+
+        const [idRows, count] = await idQuery.getManyAndCount()
+        const ids = idRows.map((row) => row.id)
+        if (ids.length === 0) {
+            return { list: [], count }
+        }
+
+        const hydrated = await this.sectionAssemblyRepository.createQueryBuilder('section_assembly')
             .leftJoinAndSelect('section_assembly.section_assembly_detail', 'section_assembly_detail')
             .leftJoinAndSelect('section_assembly.machine', 'machine')
             .leftJoinAndSelect('section_assembly_detail.part', 'parts')
@@ -835,18 +923,10 @@ export class MachineService {
                 'machine.id',
                 'machine.machine_name'
             ])
+            .where('section_assembly.id IN (:...ids)', { ids })
+            .getMany()
 
-        if (pagination?.page) {
-            query = query
-                .limit(pagination.limit)
-                .offset((pagination.page - 1) * pagination.limit)
-        }
-
-        if (pagination?.search) {
-            query = query.andWhere('LOWER(section_assembly.section_assembly_name) LIKE :sectionAssemblyName', { sectionAssemblyName: `%${pagination.search.toLowerCase()}%` })
-        }
-
-        const [list, count] = await query.getManyAndCount()
+        const list = ids.map((id) => hydrated.find((s) => s.id === id)).filter((s) => s)
         return { list, count }
     }
 
@@ -1574,6 +1654,13 @@ export class MachineService {
         const attachments = await this.attachmentRepository.find({where : { parent_id: vendorAttachmentDto.part_id, parent_type: 'part'}})
 
         return { vendor, attachments }
+    }
+
+    async supplierAttachment(supplierAttachmentDto: SupplierAttachmentDto) {
+        const supplier = await this.supplierRepository.findOne({where: { id: supplierAttachmentDto.supplier_id }})
+        const attachments = await this.attachmentRepository.find({where : { parent_id: supplierAttachmentDto.bought_out_id, parent_type: 'boughtout'}})
+
+        return { supplier, attachments }
     }
 
     async createPartBOImage(fileDto: FileDto) {

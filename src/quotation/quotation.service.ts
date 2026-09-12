@@ -214,7 +214,7 @@ export class QuotationService {
 
     async createSupplierQuotation(supplierQuotationDto: SupplierQuotationDto) {
         const supplier = await this.supplierRepo.findOne({ where: { id: supplierQuotationDto.supplier_id } })
-        const bought_out = await this.boughtoutRepo.findOne({ where: { id: supplierQuotationDto.boughtout_id } })
+        const bought_out = await this.boughtoutRepo.findOne({ where: { id: supplierQuotationDto.bought_out_id } })
 
         if (supplierQuotationDto.type.includes('Add')) {
             const createdByObj = await this.userRepository.findOne({ where: { id: supplierQuotationDto.created_by } })

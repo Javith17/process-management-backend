@@ -52,6 +52,8 @@ import { LeaveRequestEntity } from './model/leave_request.entity';
 import { DeliveryChallanEntity } from './model/delivery_challan.entity';
 import { VendorPaymentEntity } from './model/vendor_payment.entity';
 import { VendorProcessInvoiceEntity } from './model/vendor_process_invoice.entity';
+import { SupplierPaymentEntity } from './model/supplier_payment.entity';
+import { PurchaseOrderEntity } from './model/purchase_order.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -72,7 +74,7 @@ ConfigModule.forRoot()
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
         PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
         SparesQuotationEntity, EnquiryEntity, AttendanceEntity, LeaveRequestEntity, DeliveryChallanEntity,
-        VendorPaymentEntity, VendorProcessInvoiceEntity],
+        VendorPaymentEntity, VendorProcessInvoiceEntity, SupplierPaymentEntity, PurchaseOrderEntity],
       synchronize: true,
     }),
     MulterModule.register({

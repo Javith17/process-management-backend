@@ -1,10 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { AcceptByVendorDto, SendVendorOTPDto, SignIn } from "src/dto/auth.dto";
+import { AcceptByVendorDto, AcceptBySupplierDto, SendVendorOTPDto, SignIn } from "src/dto/auth.dto";
 import { ProductionMachinePartEntity } from "src/model/production_machine_part.entity";
+import { ProductionMachineBoughtoutEntity } from "src/model/production_machine_boughtout.entity";
 import { RoleEntity } from "src/model/role.entity";
 import { UserEntity } from "src/model/user.entity";
 import { VendorEntity } from "src/model/vendor.entity";
+import { SupplierEntity } from "src/model/supplier.entity";
 import { Repository } from "typeorm";
 
 @Injectable()
@@ -12,7 +14,9 @@ export class AuthService {
     constructor(
         @InjectRepository(UserEntity) private userRepo: Repository<UserEntity>,
         @InjectRepository(ProductionMachinePartEntity) private productionMachinePartRepo: Repository<ProductionMachinePartEntity>,
-        @InjectRepository(VendorEntity) private vendorRepo: Repository<VendorEntity>) { }
+        @InjectRepository(VendorEntity) private vendorRepo: Repository<VendorEntity>,
+        @InjectRepository(ProductionMachineBoughtoutEntity) private productionMachineBoughtoutRepo: Repository<ProductionMachineBoughtoutEntity>,
+        @InjectRepository(SupplierEntity) private supplierRepo: Repository<SupplierEntity>) { }
 
     async signIn(signInDto: SignIn) {
         const user = await this.userRepo.createQueryBuilder('user')
@@ -87,6 +91,30 @@ export class AuthService {
                 status: acceptByVendor.status == "accepted" ? 'Vendor In-Progress' : 'Vendor Rejected'
             })
             .where('id IN (:...id)', { id: acceptByVendor.id })
+            .execute()
+        return { message: 'Order Accepted Successfully' }
+    }
+
+    async getProductionBoughtoutDetail(id: string) {
+        // Unlike parts (which have a process dimension and multiple sibling rows per
+        // vendor+part+order), a boughtout order line is a single row — no sibling
+        // aggregation is needed here.
+        const bo = await this.productionMachineBoughtoutRepo.createQueryBuilder('production_boughtout')
+            .where('production_boughtout.id = :id', { id })
+            .getOne()
+        return { productionBoughtout: bo }
+    }
+
+    async acceptSupplier(acceptBySupplier: AcceptBySupplierDto) {
+        await this.productionMachineBoughtoutRepo.createQueryBuilder()
+            .update(ProductionMachineBoughtoutEntity)
+            .set({
+                supplier_accept_at: new Date(),
+                supplier_accept_remarks: acceptBySupplier.remarks,
+                supplier_accept_status: acceptBySupplier.status,
+                status: acceptBySupplier.status == "accepted" ? 'Payment Pending' : 'Supplier Rejected'
+            })
+            .where('id = :id', { id: acceptBySupplier.id })
             .execute()
         return { message: 'Order Accepted Successfully' }
     }

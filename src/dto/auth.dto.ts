@@ -29,3 +29,17 @@ export class SendVendorOTPDto {
     @IsNotEmpty()
     phone_number: string;
 }
+
+export class AcceptBySupplierDto{
+    @IsString()
+    @IsNotEmpty()
+    id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    status: string;
+
+    @IsString()
+    @IsOptional()
+    remarks: string;
+}

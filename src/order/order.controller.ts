@@ -8,7 +8,7 @@ import { CheckNameDto, Pagination } from 'src/dto/pagination.dto';
 import multer, { diskStorage } from 'multer';
 import path, { extname, join } from 'path';
 import { mkdir } from 'fs';
-import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, GenerateDeliveryChallanDto, MoveProductionMachinePartToVendorDto, RecordVendorProcessPaymentDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, UploadVendorInvoiceDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, GenerateDeliveryChallanDto, GeneratePurchaseOrderDto, MoveProductionMachinePartToVendorDto, RecordSupplierPaymentDto, RecordVendorProcessPaymentDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, UploadVendorInvoiceDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 import { OrderService } from './order.service';
 const fs = require('fs')
 
@@ -73,6 +73,11 @@ export class OrderController {
     @Post('/updateBoughtoutPayment')
     updateBoughtoutPayment(@Body() updateBoughtoutPaymentDto: UpdateBoughtoutPaymentDto){
         return this.orderService.updateBoughtoutPayment(updateBoughtoutPaymentDto)
+    }
+
+    @Post('/recordBoughtoutPayment')
+    recordBoughtoutPayment(@Body() recordSupplierPaymentDto: RecordSupplierPaymentDto){
+        return this.orderService.recordBoughtoutPayment(recordSupplierPaymentDto)
     }
 
     @Get('/deliveryPendingParts')
@@ -170,6 +175,36 @@ export class OrderController {
     }))
     uploadChallanPdf(@UploadedFile() file: Express.Multer.File) {
         return this.orderService.uploadChallanPdf(file)
+    }
+
+    @Post('/generatePurchaseOrder')
+    generatePurchaseOrder(@Body() generatePurchaseOrderDto: GeneratePurchaseOrderDto) {
+        return this.orderService.generatePurchaseOrder(generatePurchaseOrderDto)
+    }
+
+    @Get('/purchaseOrderList/:order_id')
+    getPurchaseOrderList(@Param('order_id') order_id: string) {
+        return this.orderService.getPurchaseOrderList(order_id)
+    }
+
+    @Get('/purchaseOrderDoc/:id')
+    getPurchaseOrderDoc(@Param('id') id: UUID) {
+        return this.orderService.getPurchaseOrderDoc(id)
+    }
+
+    @Post('/uploadPoPdf')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: (req, file, cb) => {
+                cb(null, './uploads')
+            },
+            filename: (req, file, cb) => {
+                cb(null, `PO_${Date.now()}${extname(file.originalname)}`)
+            }
+        })
+    }))
+    uploadPoPdf(@UploadedFile() file: Express.Multer.File) {
+        return this.orderService.uploadPoPdf(file)
     }
 
     @Post('/recordVendorProcessPayment')
