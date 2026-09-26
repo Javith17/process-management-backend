@@ -8,7 +8,7 @@ import { CheckNameDto, Pagination } from 'src/dto/pagination.dto';
 import multer, { diskStorage } from 'multer';
 import path, { extname, join } from 'path';
 import { mkdir } from 'fs';
-import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, GenerateDeliveryChallanDto, GeneratePurchaseOrderDto, MoveProductionMachinePartToVendorDto, RecordSupplierPaymentDto, RecordVendorProcessPaymentDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, UploadVendorInvoiceDto, VendorQuotationDto } from 'src/dto/quotation.dto';
+import { ApproveQuotationDto, CloseOrderDto, CreateMachineQuotationDto, DeliverProductionMachinePartDto, GenerateDeliveryChallanDto, GenerateInvoiceDto, GeneratePurchaseOrderDto, MoveProductionMachinePartToVendorDto, RecordSupplierPaymentDto, RecordVendorProcessPaymentDto, RescheduleProductionMachinePartDto, SupplierQuotationDto, UpdateBoughtoutPaymentDto, UpdateProductionMachineBODto, UpdateProductionMachinePartDto, UploadVendorInvoiceDto, VendorQuotationDto } from 'src/dto/quotation.dto';
 import { OrderService } from './order.service';
 const fs = require('fs')
 
@@ -205,6 +205,21 @@ export class OrderController {
     }))
     uploadPoPdf(@UploadedFile() file: Express.Multer.File) {
         return this.orderService.uploadPoPdf(file)
+    }
+
+    @Post('/generateInvoice')
+    generateInvoice(@Body() generateInvoiceDto: GenerateInvoiceDto) {
+        return this.orderService.generateInvoice(generateInvoiceDto)
+    }
+
+    @Get('/invoiceList/:order_id')
+    getInvoiceList(@Param('order_id') order_id: string) {
+        return this.orderService.getInvoiceList(order_id)
+    }
+
+    @Get('/invoiceDoc/:id')
+    getInvoiceDoc(@Param('id') id: UUID) {
+        return this.orderService.getInvoiceDoc(id)
     }
 
     @Post('/recordVendorProcessPayment')

@@ -38,4 +38,10 @@ export abstract class OrderConfirmationEntity extends BaseEntity{
 
     @Column({ nullable: true })
     order_type:string; //machine, spare, spm
+
+    @Column({ nullable: true })
+    invoice_id:string;
+
+    @Column({ nullable: true })
+    invoice_no:string;
 }

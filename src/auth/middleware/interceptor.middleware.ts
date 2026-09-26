@@ -25,7 +25,7 @@ export class AuthInterceptor implements NestInterceptor{
                 || request?.route?.path?.includes('movePartsToAssembly') || request?.route?.path?.includes('moveBoughtoutsToAssembly')
                 || request?.route?.path?.includes('closeAssemblyBoughtout') || request?.route?.path?.includes('closeAssemblyPart')
                 || request?.route?.path?.includes('closeOrder') || request?.route?.path?.includes('closeAssembly')
-                || request?.route?.path?.includes('generateDeliveryChallan')){
+                || request?.route?.path?.includes('generateDeliveryChallan') || request?.route?.path?.includes('generateInvoice')){
                     request.body.created_by = decoded.userId
                 }else if(request?.route?.path?.includes('approveRejectQuotation')){
                     request.body.approved_rejected_by = decoded.userId

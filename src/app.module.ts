@@ -54,6 +54,7 @@ import { VendorPaymentEntity } from './model/vendor_payment.entity';
 import { VendorProcessInvoiceEntity } from './model/vendor_process_invoice.entity';
 import { SupplierPaymentEntity } from './model/supplier_payment.entity';
 import { PurchaseOrderEntity } from './model/purchase_order.entity';
+import { InvoiceEntity } from './model/invoice.entity';
 ConfigModule.forRoot()
 
 @Module({
@@ -74,7 +75,7 @@ ConfigModule.forRoot()
         ProductionPartRescheduleEntity, ProductionMachineBoughtoutEntity, ProductionMachineHistoryEntity,
         PartMachineEntity, BoughtoutMachineEntity, AssemblyMachineSubEntity, AssemblyMachineMainEntity, AssemblyMachineSectionEntity,
         SparesQuotationEntity, EnquiryEntity, AttendanceEntity, LeaveRequestEntity, DeliveryChallanEntity,
-        VendorPaymentEntity, VendorProcessInvoiceEntity, SupplierPaymentEntity, PurchaseOrderEntity],
+        VendorPaymentEntity, VendorProcessInvoiceEntity, SupplierPaymentEntity, PurchaseOrderEntity, InvoiceEntity],
       synchronize: true,
     }),
     MulterModule.register({

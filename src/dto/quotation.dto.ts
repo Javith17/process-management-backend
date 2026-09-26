@@ -437,6 +437,104 @@ export class GeneratePurchaseOrderDto {
     created_by: UUID;
 }
 
+export class InvoiceLineItemDto {
+    @IsString()
+    description: string;
+
+    @IsString()
+    @IsOptional()
+    hsn_sac: string;
+
+    @IsNumber()
+    qty: number;
+
+    @IsString()
+    @IsOptional()
+    unit: string;
+
+    @IsNumber()
+    rate: number;
+}
+
+export class GenerateInvoiceDto {
+    @IsString()
+    @IsNotEmpty()
+    order_id: UUID;
+
+    @IsString()
+    @IsNotEmpty()
+    customer_name: string;
+
+    @IsString()
+    @IsOptional()
+    customer_address: string;
+
+    @IsString()
+    @IsOptional()
+    customer_gst: string;
+
+    @IsString()
+    @IsOptional()
+    customer_state: string;
+
+    @IsString()
+    @IsNotEmpty()
+    invoice_date: string;
+
+    @IsString()
+    @IsOptional()
+    delivery_note: string;
+
+    @IsString()
+    @IsOptional()
+    delivery_note_date: string;
+
+    @IsString()
+    @IsOptional()
+    dispatch_doc_no: string;
+
+    @IsString()
+    @IsOptional()
+    dispatched_through: string;
+
+    @IsString()
+    @IsOptional()
+    bill_of_lading_no: string;
+
+    @IsString()
+    @IsOptional()
+    bill_of_lading_date: string;
+
+    @IsString()
+    @IsOptional()
+    destination: string;
+
+    @IsString()
+    @IsOptional()
+    vehicle_no: string;
+
+    @IsString()
+    @IsOptional()
+    terms_of_delivery: string;
+
+    @IsString()
+    @IsOptional()
+    mode_of_payment: string;
+
+    @IsArray()
+    line_items: Array<InvoiceLineItemDto>;
+
+    @IsNumber()
+    @IsOptional()
+    insurance_charges: number;
+
+    @IsNumber()
+    igst_percent: number;
+
+    @IsString()
+    created_by: UUID;
+}
+
 export class RecordVendorProcessPaymentDto {
     @IsString()
     @IsNotEmpty()
