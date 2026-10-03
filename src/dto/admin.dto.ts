@@ -153,7 +153,26 @@ export class CreateEnquiry {
 
     @IsString()
     @IsOptional()
+    technical_discussion_user: UUID;
+
+    @IsString()
+    @IsOptional()
     remarks: string;
+
+    @IsOptional()
+    quotation_date: Date;
+
+    @IsOptional()
+    reminder_date: Date;
+
+    @IsOptional()
+    cost: number;
+
+    @IsOptional()
+    qty: number;
+
+    @IsOptional()
+    quotation_terms: string[];
 }
 
 export class CreateVendor {

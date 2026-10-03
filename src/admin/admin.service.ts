@@ -749,10 +749,15 @@ export class AdminService {
             return { message: "Enquiry already exists" }
         }
 
+        const { technical_discussion_user, quotation_date, reminder_date, cost, qty, quotation_terms: quotationTermsInput, ...enquiryFields } = enquiryDto;
         const newEnquiry = await this.enquiryRepo.create({
-            ...enquiryDto,
+            ...enquiryFields,
             level1_user: { id: enquiryDto.level1_user },
-            quotation_terms: quotation_terms,
+            technical_discussion_user: technical_discussion_user ? { id: technical_discussion_user } : undefined,
+            quotation_terms: quotationTermsInput?.length > 0 ? quotationTermsInput : quotation_terms,
+            approval_detail: (quotation_date || reminder_date || cost || qty) ? {
+                quotation_date, reminder_date, cost, quantity: qty
+            } : undefined,
             enquiry_status: 'Open'
         })
         await this.enquiryRepo.save(newEnquiry)
@@ -760,7 +765,7 @@ export class AdminService {
             id: newEnquiry.id,
             type: 'enquiry'
         });
-        return { message: "Enquiry created successfully" }
+        return { message: "Enquiry created successfully", id: newEnquiry.id }
     }
 
     async getEnquiries(input: { page?: number, limit?: number, search?: string, status?: string, user?: string }) {
@@ -768,9 +773,11 @@ export class AdminService {
             .select(['enquiry.id', 'enquiry.machine_name', 'enquiry.customer_name',
                 'enquiry.contact_no', 'enquiry.address', 'enquiry.enquiry_resource',
                 'enquiry.gst_no', 'enquiry.remarks', 'level1_user.emp_name', 'level2_user.emp_name',
-                'level2_user.id', 'enquiry.quotation_terms'])
+                'level2_user.id', 'technical_discussion_user.emp_name', 'technical_discussion_user.id',
+                'enquiry.quotation_terms', 'enquiry.approval_detail'])
             .innerJoin('enquiry.level1_user', 'level1_user')
             .leftJoin('enquiry.level2_user', 'level2_user')
+            .leftJoin('enquiry.technical_discussion_user', 'technical_discussion_user')
 
         if (input?.page) {
             query = query

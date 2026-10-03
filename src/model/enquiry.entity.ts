@@ -48,6 +48,10 @@ export class EnquiryEntity extends BaseEntity {
   @JoinColumn({ name: "level2_user" })
   level2_user: UserEntity;
 
+  @ManyToOne(() => UserEntity, { nullable: true })
+  @JoinColumn({ name: "technical_discussion_user" })
+  technical_discussion_user: UserEntity;
+
   @Column({ nullable: true })
   remarks: string;
 

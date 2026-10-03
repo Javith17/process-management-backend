@@ -469,3 +469,6 @@ ALTER TABLE machines ADD COLUMN IF NOT EXISTS images jsonb NULL;
 
 ALTER TABLE attendance ADD COLUMN IF NOT EXISTS location_alerts jsonb NULL;
 ALTER TABLE attendance ADD COLUMN IF NOT EXISTS screen_time_alerts jsonb NULL;
+
+ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS technical_discussion_user uuid NULL;
+ALTER TABLE enquiries ADD CONSTRAINT fk_technical_discussion_user FOREIGN KEY(technical_discussion_user) REFERENCES users(id);
