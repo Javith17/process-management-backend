@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsDateString, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsArray, IsBoolean, IsDateString, IsIn, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsUUID } from "class-validator";
 import { UUID } from "crypto";
 
 export class DeleteByIdDto {
@@ -21,6 +21,10 @@ export class CreateRole {
 
     @IsArray()
     screens: [];
+
+    @IsIn(['Super Admin', 'Admin', 'Followup', 'Store', 'Engineer', 'None'])
+    @IsOptional()
+    dashboard: string;
 }
 
 

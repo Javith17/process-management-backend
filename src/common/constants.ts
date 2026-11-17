@@ -1,3 +1,5 @@
+export const dashboard_options = ['Super Admin', 'Admin', 'Followup', 'Store', 'Engineer', 'None'];
+
 export const quotation_terms = ["GST at 18% will be applicable.",
 "The price provided is Ex-Mill price hence loading & Transportation charges at buyer scope.",
 "Delivery time 4-5 weeks from the date advance payment received.",

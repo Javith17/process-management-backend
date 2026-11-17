@@ -54,7 +54,8 @@ export class AdminService {
         const newRole = await this.roleRepository.create({
             role_code: roleDto.role_code,
             role_name: roleDto.role_name,
-            screens: roleDto.screens
+            screens: roleDto.screens,
+            dashboard: roleDto.dashboard || 'None'
         })
         await this.roleRepository.save(newRole)
         return newRole
@@ -66,6 +67,7 @@ export class AdminService {
             return { message: "Invalid Role" }
         }
         role.screens = roleDto.screens;
+        role.dashboard = roleDto.dashboard ?? role.dashboard;
         await this.roleRepository.update(roleDto.id, role);
         return { roleId: role.id, message: "Role updated successfully" }
     }
@@ -82,7 +84,7 @@ export class AdminService {
     async getAllRoles(pagination: Pagination) {
         let query = this.roleRepository.createQueryBuilder('roles')
             .select(['roles.role_code', 'roles.role_name',
-                'roles.screens', 'roles.id'])
+                'roles.screens', 'roles.id', 'roles.dashboard'])
             .where({ is_active: true })
 
         if (pagination?.page) {
@@ -102,7 +104,7 @@ export class AdminService {
     }
 
     async getRoleById(id: UUID) {
-        const role = await this.roleRepository.find({ select: ['id', 'role_name', 'role_code', 'screens'], where: { is_active: true, id: id } })
+        const role = await this.roleRepository.find({ select: ['id', 'role_name', 'role_code', 'screens', 'dashboard'], where: { is_active: true, id: id } })
         if (role.length > 0) {
             return { role: role.at(0) };
         }

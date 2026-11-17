@@ -20,7 +20,7 @@ export class AuthService {
 
     async signIn(signInDto: SignIn) {
         const user = await this.userRepo.createQueryBuilder('user')
-            .select(['user.id', 'user.emp_name', 'user.emp_code', 'roles.role_code', 'roles.role_name', 'roles.screens'])
+            .select(['user.id', 'user.emp_name', 'user.emp_code', 'roles.role_code', 'roles.role_name', 'roles.screens', 'roles.dashboard'])
             .innerJoinAndSelect(RoleEntity, 'roles', 'user.role_id = roles.id::text')
             .where('user.emp_code=:empCode', { empCode: signInDto.emp_code })
             .andWhere('user.password=:password', { password: signInDto.password })
@@ -36,6 +36,7 @@ export class AuthService {
                     roleCode: user.role_code,
                     roleName: user.role_name,
                     screens: user.screens,
+                    dashboard: user.dashboard,
                     roleId: user.roles_id
                 }
             };

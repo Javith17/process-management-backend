@@ -16,4 +16,9 @@ export abstract class RoleEntity extends BaseEntity{
         nullable: true,
       })
     screens: [];
+
+    // Which Operations Dashboard layout (OperationsDashboard.tsx) this role sees after login.
+    // Nullable + default so adding this column never touches existing role rows.
+    @Column({ type: 'varchar', nullable: true, default: 'None' })
+    dashboard: string;
 }
